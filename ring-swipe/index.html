@@ -1,0 +1,237 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Ring Swipe</title>
+<style>
+:root{--bg:#fbf4ec;--bg2:#f3dfe0;--fg:#2a2230;--mut:#7b7083;--card:#fffdfa;--ac:#d4476b;--ok:#2fa36b;--no:#e0533d;--bd:#eadfd3;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17121d;--bg2:#2a1a2e;--fg:#f4ecf7;--mut:#a396ad;--card:#221b2a;--ac:#ff6f93;--ok:#4cd08f;--no:#ff7a62;--bd:#37293f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17121d;--bg2:#2a1a2e;--fg:#f4ecf7;--mut:#a396ad;--card:#221b2a;--ac:#ff6f93;--ok:#4cd08f;--no:#ff7a62;--bd:#37293f;color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:radial-gradient(circle at 50% 0,var(--bg2),var(--bg) 70%) var(--bg);color:var(--fg);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+.screen{max-width:520px;margin:0 auto;padding:18px 16px 40px}
+h1,h2{font-family:Georgia,"Times New Roman",serif;margin:.2em 0}h1{font-size:2rem;text-align:center}
+.sub{text-align:center;color:var(--mut);margin:0 0 14px}
+.box{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin:12px 0}
+label.t{display:block;font-weight:600;margin:10px 0 6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--bd);background:transparent;color:var(--fg);border-radius:99px;padding:6px 12px;font:inherit;cursor:pointer}
+.chip.on{background:var(--ac);border-color:var(--ac);color:#fff}
+input[type=text],select{width:100%;padding:9px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:inherit}
+input[type=range]{width:100%;accent-color:var(--ac)}
+.btn{display:inline-block;border:0;border-radius:14px;padding:12px 18px;background:var(--ac);color:#fff;font:600 1rem inherit;font-family:inherit;cursor:pointer;text-decoration:none}
+.btn.alt{background:transparent;color:var(--fg);border:1px solid var(--bd)}.btn.big{width:100%;margin-top:6px}
+[hidden]{display:none!important}
+.hud{display:flex;gap:10px;align-items:center;font-size:.85rem;color:var(--mut)}
+.bar{flex:1;height:8px;border-radius:9px;background:var(--bd);overflow:hidden}.bar i{display:block;height:100%;width:0;transition:width .3s}
+#bl i{background:var(--ok)}#bn i{background:var(--no)}
+.vw{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:2}.vw button{border:1px solid #ffffff66;background:#0008;color:#fff;border-radius:99px;padding:4px 12px;font:inherit;font-size:.8rem;cursor:pointer}.vw button.on{background:var(--ac);border-color:var(--ac)}
+#stage{position:relative;height:360px;border-radius:22px;background:radial-gradient(circle at 50% 40%,#4a3a55,#18121e 78%);border:1px solid var(--bd);margin:12px 0;touch-action:pan-y;user-select:none;overflow:hidden}
+#stage canvas{display:block;width:100%;height:100%}
+.stamp{position:absolute;top:18px;font:900 2rem Georgia,serif;border:4px solid;border-radius:10px;padding:0 10px;opacity:0;transition:opacity .15s}
+#sl{right:16px;color:var(--ok);transform:rotate(12deg)}#sn{left:16px;color:var(--no);transform:rotate(-12deg)}
+#dream{position:relative;height:320px;border-radius:18px;background:radial-gradient(circle at 50% 40%,#4a3a55,#18121e 78%);border:1px solid var(--bd);overflow:hidden}#dream canvas{display:block;width:100%;height:100%}
+.info{text-align:center}.info h2{font-size:1.5rem}.price{font-size:1.2rem;font-weight:700;color:var(--ac)}
+.tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:6px}.tags span{font-size:.8rem;border:1px solid var(--bd);border-radius:99px;padding:2px 10px;color:var(--mut)}
+.pad{display:flex;justify-content:center;gap:22px;margin-top:14px}
+.round{width:68px;height:68px;border-radius:50%;border:3px solid;background:var(--card);font-size:1.7rem;cursor:pointer}
+.round.n{border-color:var(--no);color:var(--no)}.round.l{border-color:var(--ok);color:var(--ok)}
+#wc{flex-direction:column;align-items:stretch;margin-top:8px}#wc .chip{text-align:left;padding:11px 14px}
+.hint{text-align:center;color:var(--mut);font-size:.8rem;margin-top:10px}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--fg);color:var(--bg);padding:8px 16px;border-radius:99px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+#toast.s{opacity:1;transform:translate(-50%,0)}
+textarea{width:100%;height:420px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--fg);font:.85rem/1.4 ui-monospace,Menlo,monospace;padding:10px}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.jw{border-top:1px solid var(--bd);padding:8px 0}.jw:first-of-type{border:0}.jw b{display:block}.jw small{color:var(--mut)}
+</style></head><body>
+<div id="setup" class="screen">
+<h1>💍 Ring Swipe</h1><p class="sub">Tinder, but for wedding and engagement rings. Set your preferences, then swipe.</p>
+<div class="box"><label class="t" for="nm">Your name</label><input type="text" id="nm" placeholder="Who’s swiping?">
+<label class="t">Budget: <span id="bv"></span></label>
+<input type="range" id="mn" min="5000" max="150000" step="1000" value="10000"><input type="range" id="mx" min="5000" max="150000" step="1000" value="60000">
+<label class="t">Metal</label><div class="chips" id="cm"></div>
+<label class="t">Gold purity</label><div class="chips" id="ck"></div>
+<label class="t">Centre stone</label><div class="chips" id="cs"></div>
+<label class="t">Diamond origin</label><div class="chips" id="co"></div>
+<label class="t" for="sz">Ring size (SA letter sizing)</label><select id="sz"></select></div>
+<button class="btn big" id="go">Start swiping</button>
+<p class="hint">Love at least 10 rings and pass on at least 10. Use ← and → on your keyboard.</p>
+</div>
+
+<div id="game" class="screen" hidden>
+<div class="hud"><span>✕</span><div class="bar" id="bn"><i></i></div><div class="bar" id="bl"><i></i></div><span>❤</span></div>
+<div id="stage"><div class="stamp" id="sn">NOPE</div><div class="stamp" id="sl">LOVE</div><div class="vw"><button class="vb on" data-v="side">Side view</button><button class="vb" data-v="top">Stone view</button></div></div>
+<div class="info"><h2 id="rn"></h2><div class="price" id="rp"></div><div class="tags" id="rt"></div></div>
+<div id="why" hidden><h2 id="wh" style="text-align:center;font-size:1.3rem"></h2><div class="chips" id="wc"></div><p class="hint">Press 1, 2 or 3, or → to skip</p></div>
+<div class="pad"><button class="round n" id="bno" aria-label="Pass">✕</button><button class="round l" id="byes" aria-label="Love">❤</button></div>
+<p class="hint">← pass · → love · V switches view · swipe on touch screens</p>
+<div style="text-align:center;margin-top:8px"><button class="btn alt" id="fin" hidden>I’ve seen enough, show my profile</button></div>
+</div>
+
+<div id="result" class="screen" hidden>
+<h1>Your ring profile</h1><p class="sub" id="rs"></p>
+<div id="dream"><div class="vw"><button class="vb on" data-v="side">Side view</button><button class="vb" data-v="top">Stone view</button></div></div>
+<p class="sub" style="margin-top:8px">Your base ring, built from everything you loved.</p>
+<div class="box"><div class="row" style="margin:0 0 8px"><button class="chip on" id="tf">Full brief for a jeweller</button><button class="chip" id="ts">Short version</button></div><textarea id="rep" readonly></textarea>
+<div class="row"><button class="btn" id="cp">Copy</button><a class="btn alt" id="wa" target="_blank" rel="noopener">WhatsApp</a><a class="btn alt" id="em">Email</a></div></div>
+<div class="box"><h2>Cape Town jewellers to show this to</h2><div id="jw"></div></div>
+<button class="btn alt big" id="again">Swipe again</button>
+</div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),pick=a=>a[Math.random()*a.length|0],rnd=(a,b)=>a+Math.random()*(b-a);
+const R$=n=>'R'+Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+const METALS={'Yellow gold':0xd9a93a,'White gold':0xe4e7ec,'Rose gold':0xe3a18c,'Platinum':0xcfd4da};
+const STONES={Diamond:0xeaf7ff,Sapphire:0x2f55d6,Morganite:0xf4b8b0,Emerald:0x22a866};
+const SH=['Round','Oval','Pear','Emerald','Cushion'],ST=['Solitaire','Halo','Three-stone','Pavé','Bezel'],BD=['Delicate','Classic','Chunky'];
+const AD=['Sunset','Midnight','Velvet','Golden','Salty','Secret','Cheeky','Royal','Windy','Dreamy'];
+const NM=['Camps Bay','Bo-Kaap','Signal Hill','Table Mountain','Clifton','Kirstenbosch','Constantia','Muizenberg','Lion’s Head','Stellenbosch'];
+const KEYS=[['type','Style'],['shape','Stone shape'],['setting','Setting'],['band','Band'],['metal','Metal'],['karat','Purity'],['stone','Stone']];
+const JW=[
+['Prins & Prins','Heritage atelier in Huguenot House with 40+ years of experience. Bespoke rings in 9k, 14k or 18k gold or platinum, with diamond, sapphire, tanzanite or morganite. Custom rings take about 4 to 6 weeks.','https://prinsandprins.com/shop-engagement-rings/'],
+['Shimansky','Cuts and polishes its own diamonds in-house at its Cape Town factory, with a ring customisation service.','https://www.capetownetc.com/sponsored/customise-your-engagement-ring-with-shimansky-a-journey-of-craftsmanship-and-meaning/'],
+['Cape Diamonds','Contemporary, conflict-free custom engagement rings in Cape Town and surrounds. WhatsApp enquiries.','https://www.capediamonds.co.za/'],
+['Cape Diamond Exchange','Cape Town mainstay for diamonds and custom work. Worth asking for a quote to compare.','']];
+const P={name:'',min:10000,max:60000,metals:new Set(['Yellow gold']),karats:new Set(['18ct']),stones:new Set(['Diamond']),origin:new Set(['Either']),size:'M'};
+let L=[],N=[],cur=null,busy=false,mode='setup',asking=null;
+
+function chips(el,list,set,single){list.forEach(v=>{const b=document.createElement('button');b.type='button';b.className='chip'+(set.has(v)?' on':'');b.textContent=v;
+b.onclick=()=>{if(single){set.clear();set.add(v)}else if(set.has(v)){if(set.size>1)set.delete(v)}else set.add(v);[...el.children].forEach(c=>c.classList.toggle('on',set.has(c.textContent)))};el.append(b)})}
+chips($('#cm'),Object.keys(METALS),P.metals);chips($('#ck'),['9ct','14ct','18ct'],P.karats);chips($('#cs'),Object.keys(STONES),P.stones);chips($('#co'),['Natural','Lab-grown','Either'],P.origin,true);
+'HIJKLMNOPQRSTUV'.split('').forEach(c=>{const o=document.createElement('option');o.textContent=c;if(c==='M')o.selected=true;$('#sz').append(o)});
+function bud(){let a=+$('#mn').value,b=+$('#mx').value;if(a>b)[a,b]=[b,a];P.min=a;P.max=b;$('#bv').textContent=R$(a)+' to '+R$(b)}
+$('#mn').oninput=$('#mx').oninput=bud;bud();
+
+/* three.js */
+let renderer,camera,scene,holder=new THREE.Group();
+try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true})}catch(e){document.body.insertAdjacentHTML('afterbegin','<p class="sub">This game needs WebGL. Please try another browser.</p>')}
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;renderer.outputEncoding=THREE.sRGBEncoding;scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(38,1,.1,50);camera.position.set(0,0,5.4);
+scene.add(new THREE.AmbientLight(0xffffff,.12));
+(function(){const es=new THREE.Scene();es.background=new THREE.Color(0x2b2433);const cols=[0xffffff,0xfff1d6,0xdbe9ff,0xffffff,0xffe0e8];
+for(let i=0;i<24;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(rnd(1.5,5),rnd(1,4)),new THREE.MeshBasicMaterial({color:cols[i%5],side:THREE.DoubleSide})),th=rnd(0,6.28),y=i?rnd(-.5,1):1,rr=Math.sqrt(1-y*y);
+m.position.set(Math.cos(th)*rr*9,y*9,Math.sin(th)*rr*9);m.lookAt(0,0,0);es.add(m)}
+const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(es,.02).texture})();
+holder.rotation.x=.35;scene.add(holder);
+function mount(el){el.appendChild(renderer.domElement);const w=el.clientWidth,h=el.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix()}
+addEventListener('resize',()=>{const p=renderer.domElement.parentElement;if(p)mount(p)});
+let view='side';const VS={side:{rx:.35,py:0,pz:0,cz:5.4,sp:.012},top:{rx:1.2,py:-.3,pz:-.85,cz:3.1,sp:.01}};
+function setView(v){view=v;document.querySelectorAll('.vb').forEach(b=>b.classList.toggle('on',b.dataset.v===v))}
+document.querySelectorAll('.vb').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+(function loop(){const v=VS[view],k=.1;holder.rotation.x+=(v.rx-holder.rotation.x)*k;holder.position.y+=(v.py-holder.position.y)*k;holder.position.z+=(v.pz-holder.position.z)*k;camera.position.z+=(v.cz-camera.position.z)*k;holder.rotation.y+=v.sp;renderer.render(scene,camera);requestAnimationFrame(loop)})();
+
+const GC={},lin=c=>new THREE.Color(c).convertSRGBToLinear();
+const hs=i=>Math.abs(Math.sin(i*127.1+.5)*43758.5453)%1;
+function facet(sh){const n=8,P=[],C=[],a=k=>k*Math.PI*2/n,m=k=>a(k)+Math.PI/n,pt=(r,g,y)=>[Math.sin(g)*r,y,Math.cos(g)*r],
+T=k=>pt(.57,a(k),.15),S=k=>pt(.74,m(k),.12),G=k=>pt(1,a(k),.04),U=k=>pt(1,m(k),.04),GB=k=>pt(1,a(k),-.02),UB=k=>pt(1,m(k),-.02),M=k=>pt(.52,m(k),-.22),Cu=[0,-.44,0];
+const add=(id,p)=>{for(let i=1;i<p.length-1;i++){let A=p[0],B=p[i],D=p[i+1];const ux=B[0]-A[0],uy=B[1]-A[1],uz=B[2]-A[2],vx=D[0]-A[0],vy=D[1]-A[1],vz=D[2]-A[2],
+nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx,cx=(A[0]+B[0]+D[0])/3,cy=(A[1]+B[1]+D[1])/3+.1,cz=(A[2]+B[2]+D[2])/3;
+if(nx*cx+ny*cy+nz*cz<0){const t=B;B=D;D=t}P.push(...A,...B,...D);const h=hs(id),h2=hs(id+7.3),c=[.6+.4*h,.68+.32*h2,.82+.18*hs(id+3.1)];for(let j=0;j<3;j++)C.push(...c)}};
+add(0,[0,1,2,3,4,5,6,7].map(T));
+for(let k=0;k<n;k++){const j=(k+1)%n,l=(k+n-1)%n;
+add(1+k,[T(k),T(j),S(k)]);add(10+k,[T(k),S(l),G(k),S(k)]);add(20+k,[S(k),G(k),U(k)]);add(30+k,[S(k),U(k),G(j)]);
+add(40+k,[G(k),U(k),UB(k),GB(k)]);add(50+k,[U(k),G(j),GB(j),UB(k)]);add(60+k,[GB(k),UB(k),M(k)]);add(70+k,[UB(k),GB(j),M(k)]);add(80+k,[Cu,M(l),GB(k),M(k)])}
+for(let i=0;i<P.length;i+=3){let x=P[i],z=P[i+2];if(sh==='Cushion'){const g=Math.atan2(x,z),f=Math.pow(Math.pow(Math.abs(Math.sin(g)),3.5)+Math.pow(Math.abs(Math.cos(g)),3.5),-1/3.5);x*=f;z*=f}
+if(sh==='Pear'&&z<0){x*=1-.62*Math.pow(-z,1.3);z*=1.45}P[i]=x;P[i+2]=z}
+const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('color',new THREE.Float32BufferAttribute(C,3));g.computeVertexNormals();return g}
+function step(){const E=[[0,.14],[.62,.14],[.7,.12],[.78,.1],[.84,.075],[.9,.05],[1,.02],[1,-.02],[.9,-.08],[.78,-.15],[.66,-.22],[.54,-.29],[.4,-.35],[0,-.4]],
+g=new THREE.LatheGeometry(E.map(a=>new THREE.Vector2(a[0],a[1])).reverse(),8);g.rotateY(Math.PI/8);const n=g.attributes.position.count,c=[];
+for(let i=0;i<n;i++){const h=.62+.38*hs(Math.floor(i/9)*3.7+i%9*.9);c.push(h,h,h)}g.setAttribute('color',new THREE.Float32BufferAttribute(c,3));return g}
+function lathe(sh){if(!GC[sh]){GC[sh]=sh==='Emerald'?step():facet(sh);GC[sh].userData.keep=1}return GC[sh]}
+function gem(sh,rad,mat){const g=new THREE.Group(),geo=lathe(sh==='Oval'?'Round':sh);g.add(new THREE.Mesh(geo,mat));const gi=mat.userData.inner;
+if(gi&&rad>.1){const i=new THREE.Mesh(geo,gi);i.scale.setScalar(.72);i.rotation.y=Math.PI/8;i.position.y=-.02;g.add(i)}
+const s={Oval:[1.3,1,.9],Emerald:[1.35,1,.95]}[sh]||[1,1,1];g.scale.set(rad*s[0],rad*s[1],rad*s[2]);g.userData.sx=s[0];g.userData.sz=s[2];return g}
+function bandMesh(t,w,mat){const p=[];for(let i=0;i<=40;i++){const a=i/40*Math.PI*2,c=Math.cos(a),n=Math.sin(a);p.push(new THREE.Vector2(1+t*Math.sign(c)*Math.pow(Math.abs(c),.5),w*Math.sign(n)*Math.pow(Math.abs(n),.5)))}
+const m=new THREE.Mesh(new THREE.LatheGeometry(p,96),mat);m.rotation.x=Math.PI/2;return m}
+function build(r){holder.children.slice().forEach(c=>{c.traverse(o=>{if(o.geometry&&!o.geometry.userData.keep)o.geometry.dispose()});holder.remove(c)});
+const D=r.stone==='Diamond',g=new THREE.Group(),mm=new THREE.MeshStandardMaterial({color:lin(METALS[r.metal]),metalness:1,roughness:.17,envMapIntensity:1.4}),
+sc=lin(D?0xffffff:STONES[r.stone]),gm=new THREE.MeshPhysicalMaterial({color:sc,vertexColors:true,metalness:D?.3:.15,roughness:.02,envMapIntensity:D?3.2:2.6,flatShading:true,clearcoat:1,transparent:true,opacity:D?.78:.86}),
+gi=new THREE.MeshPhysicalMaterial({color:D?lin(0xf2f8ff):sc.clone().multiplyScalar(.8),vertexColors:true,metalness:.6,roughness:.04,envMapIntensity:D?4:3,flatShading:true});gm.userData.inner=gi;
+const t={Delicate:.05,Classic:.08,Chunky:.11}[r.band],w={Delicate:.07,Classic:.11,Chunky:.17}[r.band],isB=r.type==='Wedding band',top=1+t;
+g.add(bandMesh(t,isB?w*1.7:w,mm));
+const mini=(x,y,z,s,rot)=>{const m=gem('Round',s,gm);m.position.set(x,y,z);m.rotation.z=rot||0;g.add(m)};
+if(isB){if(r.setting==='Pavé')for(let a=-1.4;a<=1.41;a+=.17)mini(Math.sin(a)*(1+t*.95),Math.cos(a)*(1+t*.95),0,.05,-a)}
+else{const rad=.17+Math.min(r.ct,2.5)*.19,gg=gem(r.shape,rad,gm),sx=gg.userData.sx,sz=gg.userData.sz,y0=top+rad*.5+.06,cyl=(a,b,h,y,sc)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(a,b,h,32),mm);m.position.y=y;if(sc)m.scale.set(sx,1,sz);g.add(m)};
+gg.position.y=y0;g.add(gg);
+if(r.setting!=='Bezel'){const h=y0-rad*.2-top+.02;cyl(rad*.55,.08,h,top+h/2-.01,1)}
+if(r.setting==='Solitaire'||r.setting==='Pavé'||r.setting==='Halo')for(let i=0;i<(r.setting==='Halo'?6:4);i++){const n=r.setting==='Halo'?6:4,a=i*Math.PI*2/n+Math.PI/n,p=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,rad*.7,8),mm),x=Math.sin(a)*rad*.98*sx,z=Math.cos(a)*rad*.98*sz;p.position.set(x,y0-rad*.1,z);g.add(p);const k=new THREE.Mesh(new THREE.SphereGeometry(.03,10,8),mm);k.position.set(x*.97,y0+rad*.17,z*.97);g.add(k)}
+if(r.setting==='Halo'){cyl(rad*1.5,rad*1.1,.05,y0-.06,1);for(let i=0;i<18;i++){const a=i/18*Math.PI*2,m=gem('Round',.05,gm);m.position.set(Math.sin(a)*rad*1.3*sx,y0,Math.cos(a)*rad*1.3*sz);g.add(m)}}
+if(r.setting==='Bezel'){cyl(rad*1.06,rad*.9,rad*.55,y0-rad*.24,1);const b=new THREE.Mesh(new THREE.TorusGeometry(rad*1.05,.03,8,40),mm);b.rotation.x=Math.PI/2;b.position.y=y0+.01;b.scale.set(sx,sz,1);g.add(b)}
+if(r.setting==='Three-stone')[-1,1].forEach(d=>{const an=d*(rad*sx+.2+rad*.3),s=gem(r.shape,rad*.55,gm),rr=top+rad*.55*.5+.04;s.position.set(Math.sin(an)*rr,Math.cos(an)*rr,0);s.rotation.z=-an;g.add(s)});
+if(r.setting==='Pavé')for(const d of[-1,1])for(let i=0;i<6;i++){const a=d*(rad*sx+.12+i*.12);mini(Math.sin(a)*(1+t*.95),Math.cos(a)*(1+t*.95),0,.04,-a)}}
+if(r.type==='Bridal set'){const b2=bandMesh(.05,.1,mm);b2.position.z=-.5;g.add(b2)}
+g.position.y=-.3;holder.add(g)}
+
+/* game */
+function gen(){const type=pick(['Engagement ring','Engagement ring','Engagement ring','Wedding band','Bridal set','Bridal set']),isB=type==='Wedding band',metal=pick([...P.metals]),price=Math.round(rnd(P.min,P.max)/500)*500;
+return{type,shape:isB?'None':pick(SH),setting:isB?pick(['Plain','Pavé']):pick(ST),band:pick(BD),metal,karat:metal==='Platinum'?'Pt950':pick([...P.karats]),stone:pick([...P.stones]),price,ct:Math.max(.25,price/55000),name:pick(AD)+' '+pick(NM)}}
+function show(r){cur=r;build(r);const o=[...P.origin][0],isD=r.stone==='Diamond';
+$('#rn').textContent=r.name;$('#rp').textContent=R$(r.price);
+$('#rt').innerHTML='';[r.type,r.band+' band',r.setting+(r.setting==='Plain'?'':' setting'),r.metal+' '+r.karat,r.type==='Wedding band'?'':(r.shape+' '+(isD&&o!=='Either'?o.toLowerCase()+' ':'')+r.stone.toLowerCase()+' ~'+r.ct.toFixed(1)+'ct')].filter(Boolean).forEach(x=>{const s=document.createElement('span');s.textContent=x;$('#rt').append(s)})}
+const stage=$('#stage');
+function setStage(tr,op,anim){stage.style.transition=anim||'none';stage.style.transform=tr;stage.style.opacity=op}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('s');clearTimeout(t.h);t.h=setTimeout(()=>t.classList.remove('s'),1100)}
+function hud(){$('#bl i').style.width=Math.min(100,L.length*10)+'%';$('#bn i').style.width=Math.min(100,N.length*10)+'%';$('#fin').hidden=L.length+N.length<20}
+function swipe(d){if(busy||mode!=='game')return;busy=true;(d>0?L:N).push(cur);
+const q=d>0?['Ooh, she’s got taste','Saved to the vault','Jeweller is taking notes','Sparkle approved','Yes, yes, yes']:['Next!','Not feeling it','Sent back to the vault','Too much bling?','Noted: nope'];toast(pick(q));
+$(d>0?'#sl':'#sn').style.opacity=1;setStage(`translateX(${d*130}%) rotate(${d*22}deg)`,0,'transform .4s ease-in,opacity .4s');hud();
+setTimeout(()=>{$('#sl').style.opacity=0;$('#sn').style.opacity=0;
+ask(d)},400)}
+function proceed(){if((L.length>=10&&N.length>=10)||L.length+N.length>=40)return done();setStage('translateY(30px) scale(.92)',0);show(gen());stage.offsetWidth;setStage('none',1,'transform .3s,opacity .3s');busy=false}
+function ask(d){const r=cur,like=d>0,o=[],lc=x=>x.toLowerCase();
+if(r.shape!=='None')o.push(['shape',like?`The ${lc(r.shape)} stone shape`:`Not keen on the ${lc(r.shape)} shape`]);
+o.push(['setting',like?`The ${r.setting==='Plain'?'plain, simple':lc(r.setting)} look`:`The ${r.setting==='Plain'?'plain':lc(r.setting)} look isn’t for me`]);
+o.push(['metal',like?`The ${lc(r.metal)}`:`Not a fan of ${lc(r.metal)}`]);
+o.push(['band',like?`The ${lc(r.band)} band`:`The ${lc(r.band)} band isn’t right`]);
+o.push(['price',like?'The price feels right':'Too expensive for me']);
+if(r.stone!=='Diamond'&&r.shape!=='None')o.push(['stone',like?`The ${lc(r.stone)} colour`:`Not into the ${lc(r.stone)} colour`]);
+const sel=o.sort(()=>Math.random()-.5).slice(0,3);asking={r,o:sel};
+$('#wh').textContent=like?'❤ What made you love it?':'✕ What put you off?';
+const c=$('#wc');c.innerHTML='';sel.forEach((x,i)=>{const b=document.createElement('button');b.className='chip';b.textContent=(i+1)+'.  '+x[1];b.onclick=()=>pickWhy(i);c.append(b)});
+const k=document.createElement('button');k.className='chip';k.textContent='Skip (→ or Space)';k.style.opacity=.7;k.onclick=()=>pickWhy(-1);c.append(k);
+document.querySelector('.info').style.display='none';document.querySelector('.pad').style.display='none';$('#why').hidden=false}
+function pickWhy(i){if(!asking)return;if(i>=0&&asking.o[i]){asking.r.rk=asking.o[i][0];asking.r.rt=asking.o[i][1]}asking=null;$('#why').hidden=true;document.querySelector('.info').style.display='';document.querySelector('.pad').style.display='';proceed()}
+addEventListener('keydown',e=>{if(asking){const n=+e.key;if(n>=1&&n<=3)pickWhy(n-1);else if(['ArrowLeft','ArrowRight',' ','Enter'].includes(e.key)){e.preventDefault();pickWhy(-1)}return}if(e.key.toLowerCase()==='v')setView(view==='side'?'top':'side');if(e.key==='ArrowRight'||e.key.toLowerCase()==='d'){if(mode==='game'){e.preventDefault();swipe(1)}}if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a'){if(mode==='game'){e.preventDefault();swipe(-1)}}});
+let sx0=null;stage.addEventListener('pointerdown',e=>{sx0=e.clientX});addEventListener('pointerup',e=>{if(sx0!==null&&mode==='game'){const d=e.clientX-sx0;if(Math.abs(d)>70)swipe(d>0?1:-1)}sx0=null});
+$('#bno').onclick=()=>swipe(-1);$('#byes').onclick=()=>swipe(1);$('#fin').onclick=()=>{busy=true;done()};
+function go(m){mode=m;['setup','game','result'].forEach(s=>$('#'+s).hidden=s!==m)}
+$('#go').onclick=()=>{P.name=$('#nm').value.trim();P.size=$('#sz').value;L=[];N=[];asking=null;$('#why').hidden=true;document.querySelector('.info').style.display='';document.querySelector('.pad').style.display='';go('game');mount(stage);hud();busy=false;setStage('none',1);show(gen())};
+$('#again').onclick=()=>{go('setup')};
+
+/* results */
+function tally(k){const m={};L.forEach(r=>{(m[r[k]]=m[r[k]]||{l:0,n:0}).l+=1+(r.rk===k?1:0)});N.forEach(r=>{(m[r[k]]=m[r[k]]||{l:0,n:0}).n+=1+(r.rk===k?1:0)});
+const a=Object.entries(m).filter(e=>e[0]!=='None'&&e[0]!=='Plain');return{best:a.filter(e=>e[1].l>0).sort((x,y)=>(y[1].l-y[1].n)-(x[1].l-x[1].n)||y[1].l-x[1].l).map(e=>e[0]),avoid:a.filter(e=>e[1].n>e[1].l&&e[1].n>=2).sort((x,y)=>(y[1].n-y[1].l)-(x[1].n-x[1].l)).map(e=>e[0])}}
+const SP={Solitaire:'a classic solitaire (one centre stone held in claws, nothing competing with it)',Halo:'a halo setting (a ring of small diamonds framing the centre stone)','Three-stone':'a three-stone design (a centre stone flanked by two smaller stones)','Pavé':'pavé (the band set with a row of tiny stones for extra sparkle)',Bezel:'a bezel setting (the stone surrounded by a smooth metal rim, low profile and snag-resistant)'};
+const SHP={Round:'round brilliant',Oval:'oval',Pear:'pear shaped (teardrop)',Emerald:'emerald cut (rectangular step cut with cropped corners)',Cushion:'cushion cut (squarish with soft rounded corners)'};
+const BDP={Delicate:'a delicate, slim band (roughly 1.5 to 2 mm)',Classic:'a classic band width (roughly 2 to 2.5 mm)',Chunky:'a bold, chunky band (3 mm or more)'};
+const KP={'9ct':'9ct (37.5% gold)','14ct':'14ct (58.5% gold)','18ct':'18ct (75% gold)',Pt950:'platinum 950'};
+const TP={'Engagement ring':'an engagement ring','Wedding band':'a wedding band','Bridal set':'a matching bridal set (engagement ring plus wedding band)'};
+const cnt=(k,v)=>[L.filter(r=>r[k]===v).length,N.filter(r=>r[k]===v).length];
+const rd=r=>`${r.name}: ${r.type.toLowerCase()}, ${r.band.toLowerCase()} band, ${r.setting==='Plain'?'plain':r.setting.toLowerCase()} setting, ${r.metal.toLowerCase()} ${r.karat}${r.shape==='None'?'':', '+r.shape.toLowerCase()+' '+r.stone.toLowerCase()}, about ${R$(r.price)}`;
+function done(){asking=null;mode='result';busy=true;const T={};KEYS.forEach(k=>T[k[0]]=tally(k[0]));
+const top=k=>T[k].best[0],prices=L.map(r=>r.price),avg=prices.reduce((a,b)=>a+b,0)/Math.max(1,prices.length);
+const type=top('type')||'Engagement ring',isB=type==='Wedding band';let setting=top('setting')||'Solitaire';if(isB&&setting!=='Pavé')setting='Plain';
+const d={type,shape:isB?'None':top('shape')||'Round',setting,band:top('band')||'Classic',metal:top('metal')||[...P.metals][0],karat:top('karat')||[...P.karats][0],stone:top('stone')||[...P.stones][0],price:avg,ct:Math.max(.3,avg/55000)};
+if(d.metal==='Platinum')d.karat='Pt950';else if(d.karat==='Pt950')d.karat=[...P.karats][0];
+go('result');mount($('#dream'));holder.rotation.y=0;build(d);
+const org=[...P.origin][0],nm=P.name||'I',cs=L.filter(r=>r.type!=='Wedding band').map(r=>r.ct),
+desc=`${TP[d.type]} in ${d.metal.toLowerCase()} (${KP[d.karat]}), with a ${d.band.toLowerCase()} band${isB?(d.setting==='Pavé'?' set with small stones':''):', '+SP[d.setting]+', and a '+SHP[d.shape]+' '+d.stone.toLowerCase()+(d.stone==='Diamond'&&org!=='Either'?' ('+org.toLowerCase()+')':'')}`;
+const love=(k,fn)=>{const o=T[k].best.slice(0,2).map(v=>{const[l,n]=cnt(k,v);return `${fn(v)} (I loved ${l} of the ${l+n} I saw)`});return o.length?o.join(' and, as a second choice, '):''};
+const hate=(k,fn)=>T[k].avoid.slice(0,2).map(v=>{const[l,n]=cnt(k,v);return `${fn(v)} (I passed on ${n} of the ${l+n} I saw)`}).join('; ');
+const id=x=>x,B=[],NB=[];
+[['type','Style',v=>TP[v]],['setting','Setting',v=>SP[v]||v.toLowerCase()],['shape','Centre stone shape',v=>SHP[v]],['stone','Stone',v=>v.toLowerCase()],['metal','Metal',v=>v.toLowerCase()],['karat','Gold purity',v=>KP[v]],['band','Band width',v=>BDP[v]]].forEach(a=>{const y=love(a[0],a[2]),n=hate(a[0],a[2]);if(y)B.push('- '+a[1]+': '+y);if(n)NB.push('- '+a[1]+': '+n)});
+const cr=cs.length?`Centre stone size: the engagement designs I loved were roughly ${Math.min(...cs).toFixed(1)} to ${Math.max(...cs).toFixed(1)} carat in visual size (average about ${(cs.reduce((a,b)=>a+b,0)/cs.length).toFixed(1)}ct), so I’d like to understand what that looks like in my budget.`:'';
+const rs=[...L,...N].filter(r=>r.rk),RN={shape:'stone shape',setting:'setting',metal:'metal',band:'band',price:'price',stone:'stone colour'},
+rc=arr=>{const m={};arr.filter(r=>r.rk).forEach(r=>m[r.rk]=(m[r.rk]||0)+1);return Object.entries(m).sort((a,b)=>b[1]-a[1]).map(e=>RN[e[0]]+' ('+e[1]+')').join(', ')},
+why=rs.length?['WHY I SWIPED THE WAY I DID',rc(L)?'- What drew me to the rings I loved: '+rc(L)+'.':'',rc(N)?'- What put me off the others: '+rc(N)+'.':'',...rs.slice(-8).map(r=>`- ${L.includes(r)?'Loved':'Passed on'} ${r.name}: ${r.rt}`),'']:[];
+const full=[`Hi, I’m looking for a ring and I’d love your help. To work out my taste, I used a swipe game where I reviewed ${L.length+N.length} ring designs: I loved ${L.length} and passed on ${N.length}. This brief is what that pattern says about me.`,'',
+'THE RING I’M AFTER',`In one sentence: ${desc}.`,'','WHAT I’M DRAWN TO',B.join('\n')||'- No strong pattern yet.','',
+'WHAT I’D LIKE TO AVOID',NB.join('\n')||'- Nothing in particular stood out as a hard no.','',...why,
+'BUDGET AND PRACTICAL DETAILS',`- Budget: ${R$(P.min)} to ${R$(P.max)}. The rings I loved were priced between ${R$(Math.min(...prices))} and ${R$(Math.max(...prices))}, averaging ${R$(avg)}.`,`- Ring size: ${P.size} (South African letter sizing).`,`- Preferred metals: ${[...P.metals].join(', ')}; gold purity: ${[...P.karats].join(', ')}.`,`- Preferred stones: ${[...P.stones].join(', ')}${P.stones.has('Diamond')?'; diamond origin: '+(org==='Either'?'open to natural or lab-grown':org.toLowerCase()):''}.`,cr?'- '+cr:'','',
+'EXAMPLES THAT FELT RIGHT',L.slice(-3).map(r=>'- '+rd(r)).join('\n'),'','EXAMPLES THAT DID NOT',N.slice(-3).map(r=>'- '+rd(r)).join('\n'),'',
+'WHAT I’D LIKE FROM YOU',`- Please suggest one or two designs that fit this brief and my budget, and tell me honestly where my wish list and budget pull in different directions.`,`- A quote, an estimated timeline, and a CAD render or sketch for approval before anything is made.`,`- Metal hallmarking, stone certification (for example GIA or IGI for diamonds), and whether the stone is natural or lab-grown.`,`- Resizing options, insurance valuation, and aftercare.`,'','Thank you, I look forward to hearing from you.',P.name?'- '+P.name:''].filter(x=>x!==undefined).join('\n');
+const short=`Hi, I’m after ${desc}. Budget ${R$(P.min)} to ${R$(P.max)}, ring size ${P.size}. ${T.setting.avoid.length||T.shape.avoid.length?'I’d like to avoid: '+[...T.setting.avoid.slice(0,2),...T.shape.avoid.slice(0,2),...T.band.avoid.slice(0,1)].map(v=>(SP[v]||SHP[v]||BDP[v]).split(' (')[0]).join(', ')+'. ':''}Could you suggest a design and send a quote and timeline? ${P.name?'Thanks, '+P.name:''}`;
+const setT=t=>{$('#rep').value=t;$('#wa').href='https://wa.me/?text='+encodeURIComponent(t);$('#em').href='mailto:?subject='+encodeURIComponent('Ring brief: '+(P.name||'my ring taste'))+'&body='+encodeURIComponent(t)};
+$('#tf').onclick=()=>{setT(full);$('#tf').classList.add('on');$('#ts').classList.remove('on')};$('#ts').onclick=()=>{setT(short);$('#ts').classList.add('on');$('#tf').classList.remove('on')};
+$('#rs').textContent='Your base ring: '+desc;setT(full);$('#tf').classList.add('on');$('#ts').classList.remove('on');
+$('#jw').innerHTML='';JW.forEach(j=>{const e=document.createElement('div');e.className='jw';const b=document.createElement('b');b.textContent=j[0];const s=document.createElement('small');s.textContent=j[1];e.append(b,s);if(j[2]){const a=document.createElement('a');a.href=j[2];a.target='_blank';a.rel='noopener';a.textContent=' Visit';e.append(a)}$('#jw').append(e)});
+scrollTo(0,0)}
+$('#cp').onclick=()=>{const t=$('#rep');t.select();let ok=false;try{ok=document.execCommand('copy')}catch(e){}toast(ok?'Copied!':'Press Ctrl+C to copy')};
+</script></body></html>
