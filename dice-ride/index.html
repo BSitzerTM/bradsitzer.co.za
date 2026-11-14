@@ -33,6 +33,22 @@
   .big{font-size:56px;line-height:1}
   .warn{font-size:12px;opacity:.7}
   #ridebtns{position:fixed;right:14px;bottom:16px;z-index:6;display:none;flex-direction:column;gap:8px}
+  @media (max-width:600px){
+    #hud{flex-direction:column;align-items:stretch;gap:6px;padding:8px 10px}
+    #title{font-size:15px}
+    #tracker{padding:6px 10px}
+    #stats{display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;font-size:12px}
+    #s-leg{grid-column:1/-1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #track-bar{margin:14px 6px 4px}
+    .wp span{display:none}
+    #track-bike{font-size:18px}
+    #toast{top:auto;bottom:150px;font-size:14px;max-width:92vw}
+    #panel{bottom:2vh;padding:14px 16px;border-radius:20px}
+    #panel h1{font-size:21px}
+    .big{font-size:44px}
+    .btn{font-size:15px;padding:11px 16px}
+    #ridebtns{right:8px;bottom:8px}
+  }
   .confetti{position:fixed;top:-30px;font-size:26px;z-index:20;pointer-events:none;animation:fall linear forwards}
   @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.9}}
 </style>
