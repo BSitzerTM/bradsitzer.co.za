@@ -4,14 +4,14 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Brad Sitzer | Governance Trainer in Cape Town</title>
-<meta name="description" content="Brad Sitzer is a Governance Trainer in Cape Town, helping groups hear every voice. Youth education, Techmission, Grace2Learn and Duneside Boro." />
+<meta name="description" content="Brad Sitzer is a Governance Trainer in Cape Town, helping groups hear every voice. Youth education, Techmission, Grace2Learn and Abide Collective." />
 <link rel="canonical" href="https://bradsitzer.co.za/" />
 <meta name="robots" content="index, follow, max-image-preview:large" />
 <meta name="theme-color" content="#0f6f78" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Brad Sitzer" />
 <meta property="og:title" content="Brad Sitzer | Governance Trainer in Cape Town" />
-<meta property="og:description" content="Governance Trainer in Cape Town helping groups hear every voice. Youth education, Techmission, Grace2Learn and Duneside Boro." />
+<meta property="og:description" content="Governance Trainer in Cape Town helping groups hear every voice. Youth education, Techmission, Grace2Learn and Abide Collective." />
 <meta property="og:url" content="https://bradsitzer.co.za/" />
 <meta property="og:image" content="https://bradsitzer.co.za/images/web/brad.jpg" />
 <meta name="twitter:card" content="summary" />
@@ -107,7 +107,7 @@
           "name": "What does Brad Sitzer do?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "He trains groups in governance and facilitation, runs learning hubs for young people in under-resourced communities, and is involved with Techmission, Grace2Learn and the Duneside Boro residency and micro-church in Muizenberg."
+            "text": "He trains groups in governance and facilitation, runs learning hubs for young people in under-resourced communities, and is involved with Techmission, Grace2Learn and the Abide Collective Residency and Salt Church in Muizenberg."
           }
         },
         {
@@ -128,10 +128,18 @@
         },
         {
           "@type": "Question",
-          "name": "What is Duneside Boro?",
+          "name": "What is the Abide Collective Residency?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Duneside Boro is an intentional-living residency in Muizenberg for young people aged 18 to 25, and a micro-church that is part of a wider network of micro-churches. It has run since 2022."
+            "text": "The Abide Collective Residency is an intentional-living residency in Muizenberg for young people aged 18 to 25. Residents grow in who they are and gain tech training for tech jobs, while building relationships with the surrounding homes. It has run since 2022."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is Salt Church?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Salt Church is a micro-church in Muizenberg that has run since 2022. It is partnered with Renewal Network South Africa, a sister network of Underground Tampa Bay, which has over 100 micro-churches."
           }
         },
         {
@@ -147,7 +155,7 @@
           "name": "Does the site have games?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes. PowerWalk at bradsitzer.co.za/powerwalk/ is a 3D community organising game built on Nonviolent Communication and sociocracy. Brad & Tia's Dice Ride at bradsitzer.co.za/dice-ride/ is a dice-driven motorbike trip from Tokai to a one-night stay. Ring Swipe at bradsitzer.co.za/ring-swipe/ is a swipe game for wedding and engagement ring ideas that produces a ring brief for a jeweller."
+            "text": "Yes. PowerWalk at bradsitzer.co.za/powerwalk/ is a 3D community organising game where you lead neighbours with one demand and move public opinion using Nonviolent Communication and sociocracy."
           }
         }
       ]
@@ -260,6 +268,22 @@ section.dark .lede{color:#c9d2db}
 .game h3{color:#fff}
 .game p{color:#c9d2db;font-size:.95rem;margin:0 0 14px}
 .game .go{font-weight:600;color:var(--sun)}
+.feature{display:grid;grid-template-columns:.8fr 1.2fr;border-radius:24px;overflow:hidden;background:#243241;color:#fff;text-decoration:none;transition:transform .2s}
+.feature:hover{transform:translateY(-4px);color:#fff}
+.feature .art{display:grid;place-items:center;background:linear-gradient(135deg,#d9695f,#6b5a7d 50%,#3d9a99);min-height:260px}
+.feature .art span{font-size:110px}
+.feature .body{padding:40px 44px}
+.feature h3{color:#fff;font-size:1.7rem}
+.feature p{color:#c9d2db}
+.feature ul{padding-left:18px;margin:0 0 1em;color:#c9d2db}
+.feature li{margin:6px 0}
+.feature b{color:#fff}
+.feature .tag{background:rgba(242,179,61,.18);color:var(--sun)}
+.feature .btn{margin-top:6px}
+.secret{display:flex;gap:6px;margin-left:18px}
+.secret a{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;text-decoration:none;font-size:17px;opacity:.75;transition:opacity .15s,background .15s}
+.secret a:hover{opacity:1;background:var(--sand-2)}
+.bar-right{display:flex;align-items:center}
 /* give */
 .give{background:var(--coral);color:#fff;border-radius:28px;padding:56px;display:grid;grid-template-columns:1.4fr auto;gap:32px;align-items:center}
 .give h2{color:#fff}
@@ -283,6 +307,10 @@ footer.site li{margin:6px 0}
 .copy{border-top:1px solid #33404e;margin-top:38px;padding-top:22px;font-size:.88rem}
 /* responsive */
 @media (max-width:960px){
+  .feature{grid-template-columns:1fr}
+  .feature .art{min-height:170px}
+  .feature .art span{font-size:80px}
+  .feature .body{padding:30px 26px}
   .projects,.games{grid-template-columns:repeat(2,1fr)}
   .pillars{grid-template-columns:1fr}
   .about,.two{grid-template-columns:1fr}
@@ -312,6 +340,7 @@ footer.site li{margin:6px 0}
 <header class="site">
   <div class="wrap bar">
     <a class="brand" href="#top">Brad <b>Sitzer</b></a>
+    <div class="bar-right">
     <button class="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
     <nav class="main" id="nav" aria-label="Main">
       <ul>
@@ -322,6 +351,8 @@ footer.site li{margin:6px 0}
         <li><a href="#give">Give</a></li>
       </ul>
     </nav>
+    <div class="secret"><a href="dice-ride/" aria-label="Dice Ride" rel="nofollow">🎲</a><a href="ring-swipe/" aria-label="Ring Swipe" rel="nofollow">💍</a></div>
+    </div>
   </div>
 </header>
 
@@ -395,18 +426,18 @@ footer.site li{margin:6px 0}
       </div>
       <div class="projects">
         <article class="project">
-          <img src="images/web/duneside-boro-residency.jpg" alt="Duneside Boro residents making a human pyramid in the garden" width="935" height="625" loading="lazy" />
+          <img src="images/web/abide-collective-residency.jpg" alt="Abide Collective residents making a human pyramid in the garden" width="935" height="625" loading="lazy" />
           <div class="body">
             <span class="tag">2022 – present</span>
-            <h3>Duneside Boro Residency</h3>
+            <h3>Abide Collective Residency</h3>
             <p>An intentional-living residency in Muizenberg for young people aged 18 to 25. Residents grow in who they are and gain tech training for tech jobs, while we build relationships with the homes around us.</p>
           </div>
         </article>
         <article class="project">
-          <img src="images/web/duneside-boro.jpg" alt="Duneside Boro church community in the garden in Muizenberg" width="640" height="640" loading="lazy" />
+          <img src="images/web/salt-church.jpg" alt="Salt Church community in the garden in Muizenberg" width="640" height="640" loading="lazy" />
           <div class="body">
             <span class="tag">2022 – present</span>
-            <h3>Duneside Boro Church</h3>
+            <h3>Salt Church</h3>
             <p>A micro-church creating authentic rhythms of doing life together, partnered with Renewal Network South Africa, a sister network of Underground Tampa Bay with over 100 micro-churches.</p>
           </div>
         </article>
@@ -490,17 +521,24 @@ footer.site li{margin:6px 0}
     <div class="wrap">
       <div class="head">
         <span class="eyebrow">Play</span>
-        <h2>Games I've built</h2>
-        <p class="lede">Small 3D browser games, made for fun and for learning. They work on a phone too.</p>
+        <h2>A game about moving a neighbourhood</h2>
+        <p class="lede">PowerWalk turns the principles I use in governance and facilitation into something you can play, on a computer or a phone.</p>
       </div>
-      <div class="games">
-        <a class="game" href="powerwalk/"><div class="art" style="--g:linear-gradient(135deg,#d9695f,#3d9a99)" aria-hidden="true">🚶</div><div class="body">
-          <h3>PowerWalk</h3><p>Move the neighbourhood. Lead neighbours with one demand, listen, and pitch using Nonviolent Communication and sociocracy.</p><span class="go">Play PowerWalk →</span></div></a>
-        <a class="game" href="dice-ride/"><div class="art" style="--g:linear-gradient(135deg,#f2b33d,#e4573f)" aria-hidden="true">🎲</div><div class="body">
-          <h3>Brad &amp; Tia's Dice Ride</h3><p>Roll a die to pick a motorbike route from Tokai, ride for about an hour, then roll again for a one-night stay.</p><span class="go">Play Dice Ride →</span></div></a>
-        <a class="game" href="ring-swipe/"><div class="art" style="--g:linear-gradient(135deg,#f4b8b0,#8e2b5a)" aria-hidden="true">💍</div><div class="body">
-          <h3>Ring Swipe</h3><p>Swipe through wedding and engagement rings, then get a ring brief to share with a Cape Town jeweller.</p><span class="go">Play Ring Swipe →</span></div></a>
-      </div>
+      <a class="feature" href="powerwalk/">
+        <div class="art" aria-hidden="true"><span>🚶</span></div>
+        <div class="body">
+          <span class="tag">3D browser game · free</span>
+          <h3>PowerWalk: Move the Neighbourhood</h3>
+          <p>You lead a small group of neighbours with one demand. Walk the board, listen to people, and pitch to the right ones in the right way to move public opinion before the third round ends.</p>
+          <ul>
+            <li><b>👀 Facts and a clear ask</b>: say what you saw without blame, then make one request.</li>
+            <li><b>💛 Listen to what matters</b>: people move when they feel heard.</li>
+            <li><b>🤝 Try it small, together</b>: a safe trial with a review date, drawn from sociocracy.</li>
+          </ul>
+          <p>Four Cape Town scenarios, from a growing landfill to a street braai, and from Vrygrond co-design to a young company run by consent.</p>
+          <span class="btn primary">Play PowerWalk →</span>
+        </div>
+      </a>
     </div>
   </section>
 
@@ -523,12 +561,13 @@ footer.site li{margin:6px 0}
         <h2>About Brad Sitzer</h2>
       </div>
       <details open><summary>Who is Brad Sitzer?</summary><p>Brad Sitzer is a Governance Trainer in Cape Town. He helps groups run meetings where every voice is heard, and works on youth education and inclusive innovation on the Cape Flats and in Muizenberg.</p></details>
-      <details><summary>What does Brad Sitzer do?</summary><p>He trains groups in governance and facilitation, runs learning hubs for young people in under-resourced communities, and is involved with Techmission, Grace2Learn and the Duneside Boro residency and micro-church in Muizenberg.</p></details>
+      <details><summary>What does Brad Sitzer do?</summary><p>He trains groups in governance and facilitation, runs learning hubs for young people in under-resourced communities, and is involved with Techmission, Grace2Learn and the Abide Collective Residency and Salt Church in Muizenberg.</p></details>
       <details><summary>What is Techmission?</summary><p>Techmission is a digital marketing company at techmission.co.za that creates income opportunities for youth through social media marketing, web development, video editing, and leadership coaching for leaders.</p></details>
       <details><summary>What is Grace2Learn?</summary><p>Grace2Learn is a non-profit learning development hub at grace2learn.co.za. Its learning hub in Mitchells Plain ran from 2017 to 2022.</p></details>
-      <details><summary>What is Duneside Boro?</summary><p>Duneside Boro is an intentional-living residency in Muizenberg for young people aged 18 to 25, and a micro-church that is part of a wider network of micro-churches. It has run since 2022.</p></details>
+      <details><summary>What is the Abide Collective Residency?</summary><p>The Abide Collective Residency is an intentional-living residency in Muizenberg for young people aged 18 to 25. Residents grow in who they are and gain tech training for tech jobs, while building relationships with the surrounding homes. It has run since 2022.</p></details>
+      <details><summary>What is Salt Church?</summary><p>Salt Church is a micro-church in Muizenberg that has run since 2022. It is partnered with Renewal Network South Africa, a sister network of Underground Tampa Bay, which has over 100 micro-churches.</p></details>
       <details><summary>Where did Brad Sitzer study?</summary><p>He completed a BSc and Honours in Electrical Engineering at the University of Cape Town (2006), a higher certificate in Life Coaching (2015), and a Masters in Philosophy in Inclusive Innovation at UCT&#x27;s Graduate School of Business (2020).</p></details>
-      <details><summary>Does the site have games?</summary><p>Yes. PowerWalk at bradsitzer.co.za/powerwalk/ is a 3D community organising game built on Nonviolent Communication and sociocracy. Brad &amp; Tia&#x27;s Dice Ride at bradsitzer.co.za/dice-ride/ is a dice-driven motorbike trip from Tokai to a one-night stay. Ring Swipe at bradsitzer.co.za/ring-swipe/ is a swipe game for wedding and engagement ring ideas that produces a ring brief for a jeweller.</p></details>
+      <details><summary>Does the site have games?</summary><p>Yes. PowerWalk at bradsitzer.co.za/powerwalk/ is a 3D community organising game where you lead neighbours with one demand and move public opinion using Nonviolent Communication and sociocracy.</p></details>
     </div>
   </section>
 </main>
@@ -549,11 +588,9 @@ footer.site li{margin:6px 0}
         </ul>
       </div>
       <div>
-        <h3>Games</h3>
+        <h3>Play</h3>
         <ul>
           <li><a href="powerwalk/">PowerWalk</a></li>
-          <li><a href="dice-ride/">Dice Ride</a></li>
-          <li><a href="ring-swipe/">Ring Swipe</a></li>
         </ul>
       </div>
     </div>
