@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Brad & Tia's Dice Ride 🏍️🎲</title>
+<style>
+  :root{--accent:#ff7a1a;--ink:#1b1b2f;--card:rgba(255,248,235,.96)}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;font-family:system-ui,"Segoe UI",Roboto,sans-serif;background:#10142a;color:var(--ink)}
+  canvas{display:block;position:fixed;inset:0}
+  #hud{position:fixed;top:0;left:0;right:0;padding:10px 14px;display:flex;gap:10px;align-items:center;pointer-events:none;z-index:5}
+  #title{font-weight:800;color:#fff;text-shadow:0 2px 6px #0008;font-size:18px;white-space:nowrap}
+  #tracker{flex:1;background:#000a;border-radius:14px;padding:8px 12px;color:#fff;display:none}
+  #track-bar{position:relative;height:8px;background:#fff3;border-radius:4px;margin:18px 10px 6px}
+  #track-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#ffb347,var(--accent));border-radius:4px;width:0}
+  #track-bike{position:absolute;top:-18px;font-size:22px;transform:translateX(-50%) scaleX(-1);left:0}
+  .wp{position:absolute;top:-4px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:#fff5;border:2px solid #fff;transition:.3s}
+  .wp.done{background:var(--accent)}
+  .wp span{position:absolute;top:18px;left:50%;transform:translateX(-50%);font-size:10px;white-space:nowrap;opacity:.9}
+  #stats{display:flex;justify-content:space-between;font-size:13px;font-weight:600}
+  #toast{position:fixed;left:50%;top:120px;transform:translate(-50%,-20px);background:#fff;padding:10px 18px;border-radius:30px;font-weight:700;box-shadow:0 6px 24px #0006;opacity:0;transition:.35s;z-index:9;max-width:90vw;text-align:center}
+  #toast.show{opacity:1;transform:translate(-50%,0)}
+  #panel{position:fixed;left:50%;bottom:4vh;transform:translateX(-50%);width:min(620px,94vw);max-height:80vh;overflow:auto;background:var(--card);border-radius:24px;padding:20px 22px;box-shadow:0 12px 50px #000a;z-index:6}
+  #panel h1{margin:0 0 4px;font-size:26px} #panel h2{margin:12px 0 4px;font-size:18px}
+  #panel p{margin:6px 0;line-height:1.4}
+  .btn{display:inline-block;border:0;background:var(--accent);color:#fff;font-weight:800;font-size:17px;padding:12px 22px;border-radius:40px;cursor:pointer;box-shadow:0 4px 0 #b34e00;margin:6px 6px 0 0;text-decoration:none;font-family:inherit}
+  .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #b34e00}
+  .btn.alt{background:#2b3a67;box-shadow:0 4px 0 #141c3a}
+  .btn.small{font-size:14px;padding:8px 14px}
+  .chip{display:inline-block;background:#ffe4c7;border-radius:20px;padding:3px 10px;font-size:13px;font-weight:700;margin:2px 4px 2px 0}
+  ul{padding-left:20px;margin:6px 0} li{margin:3px 0}
+  .big{font-size:56px;line-height:1}
+  .warn{font-size:12px;opacity:.7}
+  #ridebtns{position:fixed;right:14px;bottom:16px;z-index:6;display:none;flex-direction:column;gap:8px}
+  .confetti{position:fixed;top:-30px;font-size:26px;z-index:20;pointer-events:none;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.9}}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div id="title">🏍️ Brad & Tia's Dice Ride</div>
+  <div id="tracker">
+    <div id="stats"><span id="s-leg"></span><span id="s-time"></span><span id="s-km"></span><span id="s-vibe"></span></div>
+    <div id="track-bar"><div id="track-fill"></div><div id="track-bike">🏍️</div></div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="panel"></div>
+<div id="ridebtns">
+  <button class="btn small" id="hoot">📯 Hoot! (+vibes)</button>
+  <button class="btn small alt" id="boost">⏩ Hold to boost</button>
+</div>
+
+<script>
+window.addEventListener('error',e=>{const d=document.getElementById('panel');d.innerHTML='<h1>⚠️ Something broke</h1><p>'+e.message+'</p><p>Launch with <b>./play.sh</b> (not by double-clicking index.html) and WebGL is off in this browser: turn on graphics acceleration in brave://settings/system (or try Chrome/Firefox), then restart it.</p>';});
+</script>
+<script type="importmap">{"imports":{"three":"./three.module.js"}}</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ============================== DATA ============================== */
+// NOTE: Airbnb/Booking ratings change. Each stay has a live-search link; check the star rating there (4.0+).
+const ROUTES = [
+ { n:1, emoji:'🐧', name:"Simon's Town & Cape Point", road:'M3 → Main Road south', vibe:'Penguins, sea air & the best twisty coast road',
+   sky:0x7ec8ff, ground:0xc9b27a, sea:true, accent:'#1fa3d9', scenery:[['bush',4],['rock',2],['house',2],['lamp',1]],
+   waypoints:['Tokai','Muizenberg','Kalk Bay','Fish Hoek','Simon\'s Town'],
+   stays:[
+    {name:'Boulders Beach garden cottage', plat:'airbnb', q:"Simon's Town, South Africa", note:'Walk to the penguins at Boulders.'},
+    {name:"Simon's Town sea-view stay", plat:'lekkeslaap', q:"Simon's Town, South Africa", note:'Breakfast on the stoep.'},
+    {name:"Simon's Town bed & breakfast", plat:'bnb', q:"Simon's Town, South Africa", note:'Friendly hosts and a harbour walk.'},
+    {name:'Fish Hoek seaside guesthouse', plat:'guesthouse', q:'Fish Hoek, South Africa', note:'Beach walk at sunrise.'},
+    {name:'Cape Point farm stay', plat:'farmstay', q:'Cape Point, South Africa', note:'Wild and quiet, near the lighthouse.'},
+    {name:"Simon's Town boutique hotel", plat:'hotel', q:"Simon's Town, South Africa", note:'Sea views and a rooftop drink.'}],
+   todo:['🐧 Penguins at Boulders Beach','🏍️ Cape Point & Cape of Good Hope sunset run','🍔 Fish & chips at the harbour','🏊 Tidal pool swim at Seaforth','🚢 Walk the naval Jubilee Square']},
+ { n:2, emoji:'🍷', name:'Stellenbosch & Franschhoek', road:'M3 → N2 → R310/R45 winelands', vibe:'Wine farms, oak avenues and mountains for days',
+   sky:0x9fd8ff, ground:0x6aa84f, sea:false, accent:'#8e2b5a', scenery:[['vine',5],['tree',3],['house',1]],
+   waypoints:['Tokai','N2 Interchange','Somerset West','Stellenbosch','Franschhoek'],
+   stays:[
+    {name:'Franschhoek winelands cottage', plat:'airbnb', q:'Franschhoek, South Africa', note:'Vineyard views and a braai area.'},
+    {name:'Stellenbosch town stay', plat:'lekkeslaap', q:'Stellenbosch, South Africa', note:'Walk to restaurants and craft beer.'},
+    {name:'Stellenbosch bed & breakfast', plat:'bnb', q:'Stellenbosch, South Africa', note:'Quiet, near the wine farms.'},
+    {name:'Franschhoek guesthouse', plat:'guesthouse', q:'Franschhoek, South Africa', note:'Cheese shops on your doorstep.'},
+    {name:'Pniel farm stay', plat:'farmstay', q:'Pniel, South Africa', note:'Rural calm and dam views.'},
+    {name:'Stellenbosch boutique hotel', plat:'hotel', q:'Stellenbosch, South Africa', note:'Pool and mountain views.'}],
+   todo:['🍷 Wine tasting (rider rule: one taster each, then water!)','🚂 Franschhoek Wine Tram','🧀 Cheese & charcuterie picnic','🚗 Franschhoek Motor Museum','🌅 Sunset on the pass back to the stay']},
+ { n:3, emoji:'🏔️', name:'Paarl & Wellington', road:'N1 → Paarl', vibe:'Giant granite rocks, farm stalls and quiet roads',
+   sky:0xffd29a, ground:0xb8a45a, sea:false, accent:'#c0562b', scenery:[['vine',3],['rock',3],['tree',2],['bush',2]],
+   waypoints:['Tokai','Bellville','Durbanville turn-off','Paarl','Wellington'],
+   stays:[
+    {name:'Paarl Mountain cottage', plat:'airbnb', q:'Paarl, South Africa', note:'Views over the valley and the rock.'},
+    {name:'Wellington wine estate cottage', plat:'lekkeslaap', q:'Wellington, South Africa', note:'Quiet and romantic.'},
+    {name:'Paarl bed & breakfast', plat:'bnb', q:'Paarl, South Africa', note:'Close to restaurants.'},
+    {name:'Paarl guesthouse', plat:'guesthouse', q:'Paarl, South Africa', note:'Farm-stall breakfast included.'},
+    {name:'Wellington farm stay', plat:'farmstay', q:'Wellington, South Africa', note:'Stargazing from the stoep.'},
+    {name:'Paarl boutique hotel', plat:'hotel', q:'Paarl, South Africa', note:'Right under the rock.'}],
+   todo:['🪨 Climb or picnic at Paarl Rock','🏛️ Afrikaans Language Monument','🧀 Farm-stall breakfast','🍇 A tasting at a boutique estate','🌌 Stargazing from the stoep']},
+ { n:4, emoji:'🌼', name:'Darling & Yzerfontein', road:'N7 → R27 / R315 West Coast', vibe:'Wide skies, wildflowers & tiny-town charm',
+   sky:0xbfe6ff, ground:0xd9c38a, sea:true, accent:'#e6a700', scenery:[['bush',5],['rock',1],['house',1],['lamp',1]],
+   waypoints:['Tokai','Milnerton','Atlantis turn-off','Darling','Yzerfontein'],
+   stays:[
+    {name:'Darling village cottage', plat:'airbnb', q:'Darling, South Africa', note:'Cosy, quirky, great coffee.'},
+    {name:'Yzerfontein beach house', plat:'lekkeslaap', q:'Yzerfontein, South Africa', note:'Wake up to the Atlantic.'},
+    {name:'Darling bed & breakfast', plat:'bnb', q:'Darling, South Africa', note:'Wildflower fields nearby.'},
+    {name:'Yzerfontein guesthouse', plat:'guesthouse', q:'Yzerfontein, South Africa', note:'Long beach walks.'},
+    {name:'Darling farm stay', plat:'farmstay', q:'Darling, South Africa', note:'Big skies and quiet nights.'},
+    {name:'Darling boutique hotel', plat:'hotel', q:'Darling, South Africa', note:'Far from the crowds.'}],
+   todo:['🎭 Evita se Perron in Darling','🍺 Craft brewery visit','🌸 Wildflower route (Aug–Sep)','🏖️ Long beach walk at Yzerfontein','🦞 Seafood sunset dinner']},
+ { n:5, emoji:'🍎', name:'Elgin & Grabouw', road:'N2 → Sir Lowry\'s Pass', vibe:'Apple orchards, cool air and a market full of food',
+   sky:0xa8dcff, ground:0x78b04a, sea:false, accent:'#4caf50', scenery:[['tree',5],['vine',1],['bush',2],['house',1]],
+   waypoints:['Tokai','N2 Interchange','Sir Lowry\'s Pass','Grabouw','Elgin'],
+   stays:[
+    {name:'Elgin valley farm cottage', plat:'airbnb', q:'Elgin, South Africa', note:'Orchards and fireplaces.'},
+    {name:'Grabouw hilltop stay', plat:'lekkeslaap', q:'Grabouw, South Africa', note:'Mountain views and cold-weather cuddles.'},
+    {name:'Elgin bed & breakfast', plat:'bnb', q:'Elgin, South Africa', note:'Walk among the apple trees.'},
+    {name:'Grabouw guesthouse', plat:'guesthouse', q:'Grabouw, South Africa', note:'Cosy with a fireplace.'},
+    {name:'Elgin dam-side farm stay', plat:'farmstay', q:'Elgin, South Africa', note:'Fireside games and quiet.'},
+    {name:'Houw Hoek boutique hotel', plat:'hotel', q:'Grabouw, South Africa', note:'Near the pass, great sunsets.'}],
+   todo:['🍎 Orchard walk & apple pie','🛍️ Elgin Railway Market (check the days it\'s open)','🥾 Short hike in the valley','🍷 Cool-climate wine tasting','🔥 Fireside board games']},
+ { n:6, emoji:'🐋', name:'Hermanus & Kleinmond', road:'N2 → R43 coast', vibe:'Cliff path, whales (Jun–Nov) and epic ocean views',
+   sky:0x8fd3ff, ground:0x9bb86a, sea:true, accent:'#0a6ebd', scenery:[['bush',4],['rock',2],['house',2],['tree',1]],
+   waypoints:['Tokai','Sir Lowry\'s Pass','Botrivier','Kleinmond','Hermanus'],
+   stays:[
+    {name:'Hermanus cliff-path cottage', plat:'airbnb', q:'Hermanus, South Africa', note:'Whale-watch from the balcony.'},
+    {name:'Kleinmond lagoon cottage', plat:'lekkeslaap', q:'Kleinmond, South Africa', note:'Quiet, beachy, great sundowners.'},
+    {name:'Hermanus bed & breakfast', plat:'bnb', q:'Hermanus, South Africa', note:'Seafood dinners in walking distance.'},
+    {name:'Onrus beach guesthouse', plat:'guesthouse', q:'Hermanus, South Africa', note:'Waves right outside.'},
+    {name:'Kleinmond farm stay', plat:'farmstay', q:'Kleinmond, South Africa', note:'Walk the beach at dusk.'},
+    {name:'Hermanus boutique hotel', plat:'hotel', q:'Hermanus, South Africa', note:'Quiet, leafy, near the cliffs.'}],
+   todo:['🐋 Cliff Path whale watching (season Jun–Nov)','🦈 Gansbaai shark-cage day-trip if brave','🍤 Seafood at the old harbour','🌊 Walk the Kleinmond beach','🏍️ Ride the Clarence Drive scenic road']}
+];
+
+const EVENTS = [
+ ['🐒 Baboon alert! Tia, hold your snacks!', 8],
+ ['🍦 Brad spots an ice-cream stand… ignoring it (for now)', 5],
+ ['🌬️ Crosswind! Lean into it like a pro!', 6],
+ ['🦅 A fish eagle swoops overhead — big luck!', 10],
+ ['📸 Tia waves at a passing biker — they wave back!', 7],
+ ['🎵 Perfect riding song just came on', 6],
+ ['🚧 Roadworks… "stop-go" boss fight survived', 4],
+ ['☕ Brad rates a roadside coffee: 9/10', 5],
+ ['🌈 Rainbow on the horizon!', 12],
+ ['⚡ Smooth overtake. Tia gives a thumbs-up.', 8]
+];
+const CHALLENGES = [
+ 'Tia picks dinner, Brad picks dessert.',
+ 'Take a silly selfie in front of the first interesting sign you see.',
+ 'Order something you\'ve never tried before.',
+ 'No phones at dinner — loser buys the drinks.',
+ 'Find the best milkshake / coffee in town. Rate it out of 10.',
+ 'Ask a local for their favourite hidden spot and go there.',
+ 'Take one photo each of something beautiful. Swap and compare.'
+];
+
+const TYPES={
+ airbnb:{label:'🏠 Airbnb',cta:'Search Airbnb ⭐4+',search:'guesthouse'},
+ lekkeslaap:{label:'🇿🇦 Lekkeslaap',cta:'Search Lekkeslaap ⭐4+',search:'guesthouse'},
+ bnb:{label:'🛏️ Independent B&B',cta:'Find B&Bs on Google Maps',search:'bed and breakfast'},
+ guesthouse:{label:'🏡 Guesthouse',cta:'Find guesthouses on Google Maps',search:'guesthouse'},
+ farmstay:{label:'🚜 Farm stay',cta:'Find farm stays on Google Maps',search:'farm stay'},
+ hotel:{label:'🏨 Boutique hotel',cta:'Find boutique hotels on Google Maps',search:'boutique hotel'}
+};
+
+/* ============================== THREE SETUP ============================== */
+if(location.protocol==='file:'){document.getElementById('panel').innerHTML='<h1>Please launch with ./play.sh</h1><p>Opening index.html directly blocks the 3D module in many browsers.</p>';}
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, .1, 400);
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();});
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x556655, 1.1));
+const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+sun.position.set(8,14,6); sun.castShadow = true;
+sun.shadow.camera.left=-12; sun.shadow.camera.right=12; sun.shadow.camera.top=12; sun.shadow.camera.bottom=-12;
+scene.add(sun);
+
+const mat = (c,o={}) => new THREE.MeshStandardMaterial({color:c, roughness:.8, ...o});
+
+/* ---------- DICE STAGE ---------- */
+const diceStage = new THREE.Group(); scene.add(diceStage);
+const table = new THREE.Mesh(new THREE.CylinderGeometry(7,7.4,.5,48), mat(0x1c6b3a));
+table.position.y=-.25; table.receiveShadow=true; diceStage.add(table);
+const rim = new THREE.Mesh(new THREE.TorusGeometry(7.2,.25,12,64), mat(0x5a2d0c)); rim.rotation.x=Math.PI/2; diceStage.add(rim);
+// the 6 destination markers around the table
+const labels = [];
+ROUTES.forEach((r,i)=>{
+  const a = i/6*Math.PI*2;
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,1.2,8), mat(0xffffff));
+  post.position.set(Math.cos(a)*5.6, .6, Math.sin(a)*5.6); diceStage.add(post);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(r.n+' '+r.emoji)}));
+  sp.scale.set(1.6,1.6,1); sp.position.set(Math.cos(a)*5.6,1.7,Math.sin(a)*5.6); diceStage.add(sp); labels.push(sp);
+});
+function labelTex(t){
+  const c=document.createElement('canvas'); c.width=c.height=128; const g=c.getContext('2d');
+  g.fillStyle='#fff'; g.beginPath(); g.arc(64,64,60,0,7); g.fill();
+  g.fillStyle='#1b1b2f'; g.font='bold 40px system-ui'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(t,64,68);
+  return new THREE.CanvasTexture(c);
+}
+
+function pipTex(n){
+  const c=document.createElement('canvas'); c.width=c.height=128; const g=c.getContext('2d');
+  g.fillStyle='#fff8e7'; g.fillRect(0,0,128,128);
+  g.strokeStyle='#e0cfa8'; g.lineWidth=6; g.strokeRect(3,3,122,122);
+  const L={1:[[.5,.5]],2:[[.25,.25],[.75,.75]],3:[[.25,.25],[.5,.5],[.75,.75]],4:[[.25,.25],[.75,.25],[.25,.75],[.75,.75]],
+    5:[[.25,.25],[.75,.25],[.5,.5],[.25,.75],[.75,.75]],6:[[.25,.25],[.75,.25],[.25,.5],[.75,.5],[.25,.75],[.75,.75]]}[n];
+  L.forEach(([x,y])=>{g.fillStyle=n===1?'#d8261b':'#1b1b2f'; g.beginPath(); g.arc(x*128,y*128,n===1?18:11,0,7); g.fill();});
+  return new THREE.CanvasTexture(c);
+}
+const FACE_VALUES=[1,6,2,5,3,4];
+const FACE_NORMALS=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].map(a=>new THREE.Vector3(...a));
+const dice = new THREE.Mesh(new THREE.BoxGeometry(1.8,1.8,1.8), FACE_VALUES.map(v=>new THREE.MeshStandardMaterial({map:pipTex(v),roughness:.4})));
+dice.castShadow=true; diceStage.add(dice); dice.position.set(0,.9,0);
+
+/* ---------- RIDE WORLD ---------- */
+const rideWorld = new THREE.Group(); scene.add(rideWorld); rideWorld.visible=false;
+const groundMat = mat(0x6aa84f);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(500,500), groundMat); ground.rotation.x=-Math.PI/2; ground.position.y=-.05; ground.receiveShadow=true; rideWorld.add(ground);
+const sea = new THREE.Mesh(new THREE.PlaneGeometry(220,500), new THREE.MeshStandardMaterial({color:0x1b8fd1,roughness:.2,metalness:.2})); sea.rotation.x=-Math.PI/2; sea.position.set(-125,0,0); rideWorld.add(sea);
+const road = new THREE.Mesh(new THREE.PlaneGeometry(8,500), mat(0x2b2b2e)); road.rotation.x=-Math.PI/2; road.receiveShadow=true; rideWorld.add(road);
+[-3.8,3.8].forEach(x=>{const l=new THREE.Mesh(new THREE.PlaneGeometry(.15,500), mat(0xffffff)); l.rotation.x=-Math.PI/2; l.position.set(x,.01,0); rideWorld.add(l);});
+const dashes=[]; for(let i=0;i<40;i++){const d=new THREE.Mesh(new THREE.PlaneGeometry(.2,2), mat(0xffd84a)); d.rotation.x=-Math.PI/2; d.position.set(0,.012,-i*6+10); rideWorld.add(d); dashes.push(d);}
+const sceneryGroup = new THREE.Group(); rideWorld.add(sceneryGroup);
+let sceneryItems=[];
+const clouds=[]; for(let i=0;i<10;i++){const c=new THREE.Mesh(new THREE.SphereGeometry(3+Math.random()*3,10,8), new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.85})); c.scale.set(2,.7,1); c.position.set((Math.random()-.5)*160,28+Math.random()*10,-Math.random()*200); rideWorld.add(c); clouds.push(c);}
+
+// bike + riders
+const bike = new THREE.Group(); rideWorld.add(bike);
+const wheels=[];
+function wheel(z){const w=new THREE.Group(); const t=new THREE.Mesh(new THREE.TorusGeometry(.42,.15,10,24), mat(0x111111)); t.rotation.y=Math.PI/2; w.add(t);
+  const rimm=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.1,8), mat(0xcccccc)); rimm.rotation.z=Math.PI/2; w.add(rimm);
+  const spoke=new THREE.Mesh(new THREE.BoxGeometry(.05,.7,.05), mat(0xdddddd)); w.add(spoke); w.position.set(0,.57,z); bike.add(w); wheels.push(w);}
+wheel(-.85); wheel(.85);
+const body=new THREE.Mesh(new THREE.BoxGeometry(.5,.45,1.4), mat(0xd8261b,{metalness:.4,roughness:.35})); body.position.set(0,.95,0); body.castShadow=true; bike.add(body);
+const tank=new THREE.Mesh(new THREE.SphereGeometry(.38,16,12), mat(0xd8261b,{metalness:.4,roughness:.3})); tank.scale.set(.9,.7,1.3); tank.position.set(0,1.25,-.25); bike.add(tank);
+const bars=new THREE.Mesh(new THREE.BoxGeometry(1,.06,.06), mat(0x222222)); bars.position.set(0,1.5,-.65); bike.add(bars);
+const light=new THREE.Mesh(new THREE.SphereGeometry(.14,10,8), new THREE.MeshBasicMaterial({color:0xfff2a0})); light.position.set(0,1.15,-1.0); bike.add(light);
+function rider(color,helmet,z,y,s){
+  const g=new THREE.Group();
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(.55*s,.75*s,.35*s), mat(color)); torso.position.y=.45*s; torso.rotation.x=-.25; g.add(torso);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.28*s,14,12), mat(helmet,{metalness:.3,roughness:.3})); head.position.y=1.05*s; g.add(head);
+  const visor=new THREE.Mesh(new THREE.BoxGeometry(.36*s,.12*s,.15*s), mat(0x111111)); visor.position.set(0,1.05*s,-.22*s); g.add(visor);
+  [-.17,.17].forEach(x=>{const leg=new THREE.Mesh(new THREE.BoxGeometry(.2*s,.2*s,.65*s), mat(0x222a44)); leg.position.set(x*s*2.2,-.05,-.2*s); g.add(leg);});
+  g.position.set(0,y,z); g.traverse(o=>o.castShadow=true); bike.add(g); return g;
+}
+const brad=rider(0x2f5fd0,0x2f5fd0,-.2,1.2,1);
+const tia=rider(0xe6469b,0xff7ac8,.45,1.3,.9);
+const ponytail=new THREE.Mesh(new THREE.SphereGeometry(.12,8,8), mat(0x7a4a2a)); ponytail.position.set(0,1.1,.28); tia.add(ponytail);
+
+/* scenery factory */
+const G={cone:new THREE.ConeGeometry(1,2.4,8),cyl:new THREE.CylinderGeometry(.18,.25,1.2,6),sph:new THREE.IcosahedronGeometry(1,0),box:new THREE.BoxGeometry(1,1,1),dod:new THREE.DodecahedronGeometry(1,0)};
+function makeScenery(type,theme){
+  const g=new THREE.Group();
+  if(type==='tree'){const t=new THREE.Mesh(G.cyl,mat(0x6b4423)); t.position.y=.6; const l=new THREE.Mesh(G.cone,mat(new THREE.Color().setHSL(.3+Math.random()*.08,.55,.28+Math.random()*.1))); l.scale.setScalar(1.3+Math.random()); l.position.y=2.4; g.add(t,l);}
+  if(type==='bush'){const b=new THREE.Mesh(G.sph,mat(new THREE.Color().setHSL(.2+Math.random()*.15,.45,.3))); b.scale.set(1.3+Math.random(),.7+Math.random()*.5,1.3+Math.random()); b.position.y=.5; g.add(b);
+    if(Math.random()<.4){const f=new THREE.Mesh(G.sph,mat([0xff5fa2,0xffd23f,0xffffff][Math.floor(Math.random()*3)])); f.scale.setScalar(.35); f.position.set(.4,1.0,.2); g.add(f);}}
+  if(type==='vine'){for(let i=0;i<4;i++){const r=new THREE.Mesh(G.box,mat(0x3e7d2a)); r.scale.set(.9,.8,8); r.position.set(i*2.2,.4,0); g.add(r);}}
+  if(type==='rock'){const r=new THREE.Mesh(G.dod,mat(0x8d8a85)); r.scale.set(1.5+Math.random()*3,1+Math.random()*3,1.5+Math.random()*3); r.position.y=.8; g.add(r);}
+  if(type==='house'){const b=new THREE.Mesh(G.box,mat(0xfaf3e3)); b.scale.set(3,2,3); b.position.y=1; const r=new THREE.Mesh(G.cone,mat(0xb5543a)); r.scale.set(2.6,1,2.6); r.rotation.y=Math.PI/4; r.position.y=3; g.add(b,r);}
+  if(type==='lamp'){const p=new THREE.Mesh(G.cyl,mat(0x444444)); p.scale.set(.4,3,.4); p.position.y=1.8; g.add(p);}
+  g.traverse(o=>{if(o.isMesh)o.castShadow=true;});
+  return g;
+}
+function mountainTex(){}
+function setTheme(r){
+  scene.background=new THREE.Color(r.sky); scene.fog=new THREE.Fog(r.sky,50,170);
+  groundMat.color.set(r.ground); sea.visible=r.sea;
+  while(sceneryGroup.children.length) sceneryGroup.remove(sceneryGroup.children[0]);
+  sceneryItems=[];
+  const bag=r.scenery.flatMap(([t,w])=>Array(w).fill(t));
+  for(let i=0;i<110;i++){
+    const t=bag[Math.floor(Math.random()*bag.length)]; const o=makeScenery(t,r);
+    const side=Math.random()<.5?-1:1; if(r.sea&&side<0&&Math.random()<.7) {o.userData.x=-(6+Math.random()*6);} else o.userData.x=side*(6+Math.random()*35);
+    o.position.set(o.userData.x,0,-Math.random()*160+10); sceneryGroup.add(o); sceneryItems.push(o);
+  }
+  // distant mountains
+  for(let i=0;i<14;i++){const m=new THREE.Mesh(G.cone,mat(r.sea?0x7d8f9b:0x6f8a6a)); const s=14+Math.random()*16; m.scale.set(s,s*1.4,s); m.position.set(60+Math.random()*60,s*1.1,-Math.random()*160); m.userData.x=m.position.x; m.userData.mtn=true; sceneryGroup.add(m); sceneryItems.push(m);}
+}
+
+/* ============================== AUDIO ============================== */
+let ac; function beep(f=440,d=.12,type='square',v=.06,slide=0){
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(),g=ac.createGain();
+  o.type=type;o.frequency.value=f; if(slide)o.frequency.linearRampToValueAtTime(f+slide,ac.currentTime+d); g.gain.value=v; g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d); o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+d);}catch(e){}
+}
+const fanfare=()=>[523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,.2,'triangle',.12),i*120));
+
+/* ============================== GAME STATE ============================== */
+const $=id=>document.getElementById(id);
+const panel=$('panel'), toastEl=$('toast');
+let platform='airbnb', state='start', route=null, driveMin=0, km=0, p=0, vibe=0, wpIdx=0, boosting=false, eventPlan=[], stay=null;
+let dice_t=-1, dice_start={}, dice_value=1, rideTime=0;
+const RIDE_SECS=26;
+const log = JSON.parse(localStorage.getItem('dicetrips')||'[]');
+
+function toast(t){toastEl.textContent=t; toastEl.classList.add('show'); clearTimeout(toast.t); toast.t=setTimeout(()=>toastEl.classList.remove('show'),2800);}
+function confetti(n=60){for(let i=0;i<n;i++){const e=document.createElement('div'); e.className='confetti'; e.textContent=['🎉','✨','🎲','🏍️','⭐','🍾'][i%6]; e.style.left=Math.random()*100+'vw'; e.style.animationDuration=2+Math.random()*2.5+'s'; e.style.fontSize=18+Math.random()*20+'px'; document.body.appendChild(e); setTimeout(()=>e.remove(),5000);}}
+
+function showStart(){
+  state='start'; diceStage.visible=true; rideWorld.visible=false; $('tracker').style.display='none'; $('ridebtns').style.display='none';
+  scene.background=new THREE.Color(0x10142a); scene.fog=null;
+  const past = log.length ? `<h2>📒 Past adventures</h2><ul>${log.slice(-4).reverse().map(l=>`<li>${l.emoji} ${l.dest} — <i>${l.date}</i></li>`).join('')}</ul>`:'';
+  panel.innerHTML=`<h1>🎲 Where will the dice send us?</h1>
+   <p>Start: <b>12 Paddock Lane, Tokai</b> 🏠 — Brad & Tia, helmets on! Roll 1–6 and we ride for roughly an hour to a one-night stay.</p>
+   <div>${ROUTES.map(r=>`<span class="chip">${r.n} ${r.emoji} ${r.name}</span>`).join('')}</div>
+   <button class="btn" id="roll">🎲 ROLL THE DICE!</button>${past}`;
+  $('roll').onclick=rollDice;
+}
+
+function rollDice(){
+  if(state!=='start'&&state!=='result')return;
+  state='rolling'; panel.style.display='none'; beep(200,.4,'sawtooth',.05,300);
+  dice_value=1+Math.floor(Math.random()*6);
+  const idx=FACE_VALUES.indexOf(dice_value);
+  const qUp=new THREE.Quaternion().setFromUnitVectors(FACE_NORMALS[idx],new THREE.Vector3(0,1,0));
+  const yaw=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),Math.random()*6.28);
+  dice_start={target:yaw.multiply(qUp), axis:new THREE.Vector3(Math.random()-.5,Math.random()-.5,Math.random()-.5).normalize(), x:-4.5, z:2};
+  dice_t=0; dice.visible=true;
+  for(let i=1;i<=7;i++)setTimeout(()=>beep(300+Math.random()*300,.05,'square',.04),i*280);
+}
+function updateDice(dt){
+  if(dice_t<0)return;
+  dice_t+=dt/2.6; const t=Math.min(dice_t,1), e=1-Math.pow(1-t,2);
+  dice.position.x=dice_start.x*(1-e); dice.position.z=dice_start.z*(1-e);
+  dice.position.y=.9+Math.abs(Math.sin(t*Math.PI*3.4))*2.8*Math.pow(1-t,1.4);
+  const ang=Math.pow(1-t,2)*16;
+  dice.quaternion.copy(dice_start.target).multiply(new THREE.Quaternion().setFromAxisAngle(dice_start.axis,ang));
+  if(dice_t>=1){dice_t=-1; onRolled();}
+}
+
+function onRolled(){
+  state='result'; route=ROUTES[dice_value-1]; driveMin=45+Math.floor(Math.random()*31); km=Math.round(driveMin*.95);
+  vibe=0; fanfare(); confetti(40);
+  stay=route.stays[Math.floor(Math.random()*route.stays.length)]; platform=Math.random()<.5?'airbnb':'lekkeslaap';
+  panel.style.display='block';
+  panel.innerHTML=`<div class="big">🎲 ${dice_value}</div>
+   <h1>${route.emoji} ${route.name}</h1>
+   <p><b>${route.road}</b><br><i>${route.vibe}</i></p>
+   <p>⏱️ Ride time: <b>${driveMin} min</b> (~${km} km). Total adventure: <b>1 night</b>.</p>
+   <button class="btn" id="go">🏍️ Fire up the bike!</button>
+   <button class="btn alt small" id="reroll">🎲 Roll again (cheat!)</button>`;
+  $('go').onclick=startRide; $('reroll').onclick=()=>{panel.style.display='none';rollDice();};
+}
+
+function startRide(){
+  state='riding'; p=0; wpIdx=0; setTheme(route);
+  document.documentElement.style.setProperty('--accent',route.accent);
+  diceStage.visible=false; rideWorld.visible=true; panel.style.display='none'; tripEntry=null;
+  $('tracker').style.display='block'; $('ridebtns').style.display='flex';
+  // plan events
+  eventPlan=[.18,.38,.58,.78].map(x=>({at:x+Math.random()*.08,ev:EVENTS[Math.floor(Math.random()*EVENTS.length)],done:false}));
+  const bar=$('track-bar'); bar.querySelectorAll('.wp').forEach(w=>w.remove());
+  route.waypoints.forEach((w,i)=>{const d=document.createElement('div'); d.className='wp'+(i===0?' done':''); d.style.left=i/(route.waypoints.length-1)*100+'%'; d.innerHTML=`<span>${w}</span>`; bar.appendChild(d);});
+  toast('🏁 Leaving 12 Paddock Lane — '+route.road);
+  beep(120,.6,'sawtooth',.08,180);
+}
+$('hoot').onclick=()=>{if(state!=='riding')return; vibe+=5; beep(380,.35,'square',.1); toast('📯 BEEP BEEP! +5 vibes'); };
+const boostOn=e=>{boosting=true;e.preventDefault();}, boostOff=()=>boosting=false;
+['mousedown','touchstart'].forEach(ev=>$('boost').addEventListener(ev,boostOn));
+['mouseup','mouseleave','touchend'].forEach(ev=>$('boost').addEventListener(ev,boostOff));
+addEventListener('keydown',e=>{if(e.code==='Space')boosting=true; if(e.key==='h')$('hoot').click();});
+addEventListener('keyup',e=>{if(e.code==='Space')boosting=false;});
+
+function updateRide(dt){
+  rideTime+=dt;
+  const speedMul = boosting?2.2:1;
+  if(state==='riding'){
+    p+=dt/RIDE_SECS*speedMul; vibe+=dt*(boosting?2:.4);
+    const frac=Math.min(p,1), mins=Math.round(frac*driveMin);
+    $('track-fill').style.width=frac*100+'%'; $('track-bike').style.left=frac*100+'%';
+    $('s-leg').textContent=route.emoji+' '+route.name; $('s-time').textContent=`⏱️ ${mins}/${driveMin} min`; $('s-km').textContent=`🛣️ ${Math.round(frac*km)}/${km} km`; $('s-vibe').textContent=`✨ ${Math.round(vibe)}`;
+    const wpn=route.waypoints.length-1, now=Math.floor(frac*wpn+1e-6);
+    if(now>wpIdx){wpIdx=now; document.querySelectorAll('.wp')[now].classList.add('done'); toast('📍 '+(now<wpn?'Passing ':'Arriving: ')+route.waypoints[now]); beep(660,.12,'triangle',.08);}
+    eventPlan.forEach(e=>{if(!e.done&&frac>=e.at){e.done=true; vibe+=e.ev[1]; toast(e.ev[0]+'  (+'+e.ev[1]+' vibes)'); beep(500,.1,'triangle',.08);}});
+    if(p>=1){state='arriving'; }
+  }
+  const speed = state==='arriving' ? Math.max(0,40*(1-(p-1)*3)) : 40*speedMul;
+  if(state==='arriving'){p+=dt/RIDE_SECS; if(speed<=.5){arrive();}}
+  const d=speed*dt;
+  sceneryItems.forEach(o=>{o.position.z+=d*(o.userData.mtn?.3:1); if(o.position.z>14){o.position.z-=170; if(!o.userData.mtn) o.position.x=o.userData.x*(.8+Math.random()*.4);}});
+  dashes.forEach(m=>{m.position.z+=d; if(m.position.z>12)m.position.z-=240;});
+  clouds.forEach(c=>{c.position.z+=d*.05+dt*.5; if(c.position.z>20)c.position.z=-200;});
+  wheels.forEach(w=>w.rotation.x-=speed*dt*2.4);
+  bike.rotation.z=Math.sin(rideTime*.9)*.07; bike.position.x=Math.sin(rideTime*.5)*.4;
+  bike.position.y=Math.sin(rideTime*18)*.012*(speed>1);
+  camera.position.set(bike.position.x*.5+Math.sin(rideTime*.3)*.8, 3.1+(boosting?-.3:0), 7.5-(boosting?1:0));
+  camera.lookAt(bike.position.x*.4,1.3,-5); camera.fov=55+(boosting?10:0); camera.updateProjectionMatrix();
+  sea.position.z=0;
+}
+
+let challenge='', tripEntry=null;
+function arrive(){
+  state='arrived'; fanfare(); confetti(90); boosting=false; $('ridebtns').style.display='none';
+  challenge=CHALLENGES[Math.floor(Math.random()*CHALLENGES.length)];
+  panel.style.display='block';
+  panel.innerHTML=`<h1>🏁 YOU MADE IT! ${route.emoji}</h1>
+   <p>${driveMin} min, ${km} km, <b>${Math.round(vibe)} vibe points</b>. Brad's legs are happy, Tia's hair is… a bit wild.</p>
+   <h2>🛏️ Where do we sleep?</h2>
+   <p>Roll the dice to pick one of <b>six places</b> to sleep, one per die face:<br>1 Airbnb · 2 Lekkeslaap · 3 independent B&amp;B · 4 guesthouse · 5 farm stay · 6 boutique hotel</p>
+   <p class="warn">Check-in Fri 13 Nov · check-out Sat 14 Nov · 1 night · 2 guests · under R1 500</p>
+   <button class="btn" id="stayroll">🎲 Roll for tonight's stay</button>
+   <h2>🎮 Tonight's challenge</h2><p>${challenge}</p>
+   <button class="btn small alt" id="coin">🪙 Coin flip: who picks dinner?</button> <span id="coinres" style="font-weight:800"></span>
+   <hr>
+   <button class="btn alt" id="again">🎲 New adventure</button>`;
+  $('stayroll').onclick=()=>stayRoll($('stayroll'));
+  $('coin').onclick=()=>{$('coinres').textContent=Math.random()<.5?'🏍️ Brad picks!':'💖 Tia picks!'; beep(900,.1,'triangle',.1);};
+  $('again').onclick=showStart;
+}
+
+function stayRoll(btn){
+  btn.disabled=true; let n=0;
+  const iv=setInterval(()=>{
+    if(state!=='arrived'){clearInterval(iv);return;}
+    btn.textContent='🎲 '+(1+Math.floor(Math.random()*6)); beep(350+n*15,.05,'square',.04);
+    if(++n>=12){clearInterval(iv); showStay(1+Math.floor(Math.random()*6));}
+  },90);
+}
+
+function showStay(v){
+  stay = route.stays[v-1]; platform = stay.plat;
+  const T = TYPES[platform], town = stay.q.split(',')[0];
+  const link = platform==='airbnb'
+    ? 'https://www.airbnb.com/s/'+encodeURIComponent(stay.q)+'/homes?checkin=2026-11-13&checkout=2026-11-14&adults=2&price_max=1500&currency=ZAR'
+    : platform==='lekkeslaap'
+    ? 'https://www.google.com/search?q='+encodeURIComponent('site:lekkeslaap.co.za '+town+' 1 night 2 guests')
+    : 'https://www.google.com/maps/search/'+encodeURIComponent(T.search+' '+town);
+  const dest = route.name+' — '+stay.name+' ('+T.label+')';
+  if(!tripEntry){ tripEntry={emoji:route.emoji,dest,date:new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'})}; log.push(tripEntry); }
+  tripEntry.dest=dest; localStorage.setItem('dicetrips',JSON.stringify(log.slice(-20)));
+  const mapsBtn = (platform==='airbnb'||platform==='lekkeslaap')
+    ? `<a class="btn small alt" target="_blank" rel="noopener" href="https://www.google.com/maps/search/${encodeURIComponent('guesthouse '+stay.q)}">Google Maps</a>` : '';
+  panel.innerHTML=`<div class="big">🎲 ${v}</div>
+   <h2>Option ${v} of 6: ${T.label}</h2>
+   <p><b>${stay.name}</b><br>${stay.note}</p>
+   <p class="warn">Check-in Fri 13 Nov · check-out Sat 14 Nov · 1 night · 2 guests · under R1 500. I haven't checked live listings or prices, so confirm them on the site.</p>
+   <a class="btn small" target="_blank" rel="noopener" href="${link}">${T.cta}</a>
+   ${mapsBtn}
+   <button class="btn small alt" id="reroll">🎲 Not us, reroll</button>
+   <button class="btn small" id="keep">✅ We like it!</button>
+   <p class="warn">Check the listing has 4.0+ stars (or guest favourite) before booking.</p>`;
+  $('reroll').onclick=()=>stayRoll($('reroll'));
+  $('keep').onclick=keepStay;
+}
+
+function keepStay(){
+  panel.innerHTML=`<h1>🛏️ Sleeping at ${stay.name}!</h1>
+   <p>${TYPES[platform].label} · Fri 13 – Sat 14 Nov · 2 guests</p>
+   <h2>🎯 Things to do</h2><ul>${route.todo.map(t=>`<li>${t}</li>`).join('')}</ul>
+   <h2>🎮 Tonight's challenge</h2><p>${challenge}</p>
+   <hr>
+   <button class="btn" id="again">🎲 New adventure</button>`;
+  $('again').onclick=showStart;
+  toast('🛏️ Stay locked in!');
+}
+
+/* ============================== LOOP ============================== */
+const clock=new THREE.Clock();
+function frame(){
+  requestAnimationFrame(frame);
+  const dt=Math.min(clock.getDelta(),.05), t=clock.elapsedTime;
+  if(rideWorld.visible && (state==='riding'||state==='arriving'||state==='arrived')) updateRide(dt);
+  if(diceStage.visible){
+    updateDice(dt);
+    const a=t*.15; camera.position.set(Math.sin(a)*3,9.5,Math.cos(a)*3+10); camera.lookAt(0,0,0);
+    labels.forEach((s,i)=>s.position.y=1.7+Math.sin(t*2+i)*.12);
+    if(dice_t<0&&state!=='result'&&state!=='rolling')dice.rotation.y+=dt*.6;
+  }
+  renderer.render(scene,camera);
+}
+showStart(); frame();
+</script>
+</body>
+</html>
