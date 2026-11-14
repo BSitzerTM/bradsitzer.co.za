@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en-ZA"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PowerWalk: Move the Neighbourhood | Brad Sitzer</title>
+<meta name="description" content="PowerWalk is a 3D game about community organising. Lead a small group of neighbours with one demand, listen, and pitch using NVC and sociocracy principles." />
+<link rel="canonical" href="https://bradsitzer.co.za/powerwalk/" />
+<meta name="robots" content="index, follow, max-image-preview:large" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Brad Sitzer" />
+<meta property="og:title" content="PowerWalk: Move the Neighbourhood" />
+<meta property="og:description" content="A 3D community organising game: listen, pitch and move public opinion, using Nonviolent Communication and sociocracy principles." />
+<meta property="og:url" content="https://bradsitzer.co.za/powerwalk/" />
+<meta name="twitter:card" content="summary" />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "PowerWalk: Move the Neighbourhood",
+  "url": "https://bradsitzer.co.za/powerwalk/",
+  "description": "A 3D community organising game. Lead a small group of neighbours with one demand, listen to what each person needs, and pitch using Nonviolent Communication and sociocracy principles.",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Any modern web browser",
+  "isAccessibleForFree": true,
+  "inLanguage": "en-ZA",
+  "author": {"@id": "https://bradsitzer.co.za/#brad"},
+  "publisher": {"@id": "https://bradsitzer.co.za/#brad"},
+  "offers": {"@type": "Offer", "price": "0", "priceCurrency": "ZAR"}
+}
+</script>
+<noscript><p>PowerWalk is a 3D community organising game built around Nonviolent Communication and sociocracy. It needs JavaScript to run. <a href="https://bradsitzer.co.za/">Back to Brad Sitzer</a></p></noscript>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark;--bg:#1b1630;--panel:rgba(27,22,48,.9);--ink:#f6efe2;--mute:#b4a9cc;--gold:#ffc94d;--red:#d9695f;--teal:#3d9a99;--ok:#58d6b0}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS",system-ui,sans-serif}
+[hidden]{display:none!important}
+canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
+#hud{position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;pointer-events:none}
+.box{background:var(--panel);border-radius:10px;padding:8px 12px;font-size:14px;line-height:1.3}
+#demand{flex:1 1 260px}#demand b{color:var(--gold)}
+#meter{flex:1 1 220px}
+#bar{position:relative;height:12px;border-radius:6px;margin:8px 0 4px;background:linear-gradient(90deg,var(--red),#6b5a7d,var(--teal))}
+#goal{position:absolute;top:-4px;bottom:-4px;width:3px;background:#fff}
+#pin{position:absolute;top:-5px;width:6px;height:22px;margin-left:-3px;background:var(--gold);border-radius:3px;transition:left .6s}
+.tiny{font-size:12px;color:var(--mute);display:flex;justify-content:space-between}
+#bottom{position:fixed;left:0;right:0;bottom:0;padding:6px 8px calc(env(safe-area-inset-bottom,0px) + 8px);display:flex;flex-direction:column;gap:6px;background:linear-gradient(transparent,rgba(20,15,36,.9) 14%)}
+#resp{min-height:92px;max-height:150px;overflow:auto;position:relative;padding-right:34px;font-size:15px}
+#resp .x{position:absolute;right:6px;top:4px;background:none;border:0;color:var(--mute);font-size:22px;cursor:pointer}
+#resp small{color:var(--mute)}
+#resp .m.old{opacity:.65;border-top:1px solid #554d73;margin-top:8px;padding-top:8px}
+#next{display:flex;align-items:center;gap:10px;background:var(--gold);color:#2a2000;font-weight:bold;border-radius:10px;padding:8px 12px;font-size:15px}
+#next span{flex:1}
+#go{background:#2a2000;color:var(--gold);border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:bold;cursor:pointer;white-space:nowrap}
+#toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--th,90px) + 8px);width:max-content;max-width:92vw;text-align:center;opacity:0;transition:opacity .3s;pointer-events:none}
+#toast.on{opacity:1}
+#cards{display:flex;gap:8px;justify-content:center}
+.card{max-height:118px;overflow:auto}
+@media (max-width:640px){.card{font-size:11px;padding:6px}.card h4{font-size:12px}#resp{font-size:13px}#next{font-size:13px}}
+.card{flex:1 1 0;max-width:230px;background:var(--panel);border:2px solid transparent;border-radius:12px;padding:8px 10px;color:var(--ink);font:inherit;font-size:13px;text-align:left;cursor:pointer;line-height:1.3}
+.card:focus-visible{outline:3px solid var(--gold)}
+.card.sel{border-color:var(--gold);transform:translateY(-6px)}
+.card h4{margin:0 0 3px;font-size:15px}
+.lab{position:fixed;left:0;top:0;transform:translate(-50%,-100%);font-size:12px;white-space:nowrap;background:rgba(20,15,36,.8);padding:2px 7px;border-radius:8px;pointer-events:none}
+.lab.near{background:var(--gold);color:#2a2000;font-weight:bold}
+.ov{position:fixed;inset:0;background:rgba(20,15,36,.94);display:flex;align-items:safe center;justify-content:center;padding:16px;overflow:auto}
+.ov>div{max-width:760px;width:100%}
+h1{font-size:34px;margin:0 0 6px;letter-spacing:-.5px}
+h2{margin:0 0 6px}
+p{line-height:1.5;margin:6px 0}
+.sc{display:block;width:100%;text-align:left;margin:10px 0;padding:12px 14px;border-radius:12px;border:2px solid var(--mute);background:transparent;color:var(--ink);font:inherit;cursor:pointer}
+.sc:hover,.sc:focus-visible{border-color:var(--gold);outline:none}
+.sc b{font-size:18px;color:var(--gold)}
+.btn{background:var(--gold);color:#2a2000;border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:bold;cursor:pointer;margin-top:10px}
+#touch{position:fixed;left:8px;right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + var(--bh,130px) + 8px);display:none;justify-content:space-between;pointer-events:none}
+#touch div{pointer-events:auto;display:grid;grid-template-columns:repeat(3,46px);grid-auto-rows:46px;gap:4px}
+#touch button{border-radius:50%;border:0;background:rgba(255,255,255,.22);color:#fff;font-size:18px;touch-action:none}
+@media (pointer:coarse){#touch{display:flex}}
+@media (prefers-reduced-motion:reduce){.card.sel{transform:none}}
+</style></head><body>
+<canvas id="c"></canvas>
+<div id="hud" hidden>
+ <div class="box" id="demand"></div>
+ <div class="box" id="meter"><div id="rnd"></div><div id="bar"><div id="goal"></div><div id="pin"></div></div><div class="tiny"><span>Disagree</span><span>Public opinion</span><span>Agree</span></div></div>
+</div>
+<div id="labs"></div>
+<div id="toast" class="box"></div>
+<div id="bottom" hidden><div id="resp" class="box"></div><div id="next"><span id="nt"></span><button id="go">Act (E)</button></div><div id="cards"></div></div>
+<div id="touch" hidden><div><span></span><button data-k="w">▲</button><span></span><button data-k="a">◀</button><button data-k="s">▼</button><button data-k="d">▶</button></div><div style="grid-template-columns:repeat(2,64px)"><button data-k=" " style="width:64px;height:64px">Jump</button><button data-k="e" style="width:64px;height:64px">Act</button></div></div>
+<div class="ov" id="menu"><div>
+ <h1>PowerWalk</h1>
+ <p>You lead a small group of neighbours with one demand. Public opinion starts in the middle of the map. Walk the board, listen to people, and pitch to the right ones in the right way. Push opinion to the green line before round 3 ends.</p>
+ <p><b>Move</b> WASD or arrows. <b>Jump</b> Space (grab the gold sparks floating overhead, they double your next pitch). <b>Cards</b> 1 / 2 / 3. <b>Act</b> E: with no card, listen; with a card, pitch.</p>
+ <p>Every character needs something different, and each need matches a principle from Nonviolent Communication or Sociocracy: <b>👀 Observe and ask</b> (NVC: facts without blame, then a clear request), <b>💛 Name needs</b> (NVC: feelings and needs, with empathy), <b>🤝 Seek consent</b> (Sociocracy: small pilot, invite objections, set a review date). Listening is free. Guessing wrong wastes a pitch. Two matches in a row earn a bonus spark.</p>
+ <div id="list"></div>
+</div></div>
+<div class="ov" id="end" hidden><div id="endbox"></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const ICON={head:"👀",heart:"💛",feet:"🤝"},NAME={head:"Facts and a clear ask",heart:"Listen to what matters",feet:"Try it small, together"};
+const HINT={head:"to hear what you saw without blame, then one clear ask",heart:"to feel heard before anyone pushes an idea",feet:"a small, safe trial with a say and a check-back date"};
+const RN=["Round 1: Listen and make your first move","Round 2: Find allies (give people who agree a bigger voice)","Round 3: Reach across (what opponents push back on shows what your plan is missing, so they move further)"];
+// ch: name, role, agree(-3..3), influence(0..5), likes, colour
+const SC=[
+{name:"The Mountain Next Door",demand:"Stop the landfill growing. Make it shrink, as promised.",
+ blurb:"The landfill was just approved to grow from 26m to 29m, after a promise to reduce it. A recycling plant has also opened on site. Marine Estate is worried.",
+ cards:{head:"Show the numbers: 26m to 29m, and the promise to shrink it.",heart:"Tell the story of a family who can’t open their windows in summer.",feet:"Organise a clean-up, then walk 100 residents into the council meeting."},
+ ask:"Who in your own area holds power but is hard to reach? Who did you almost skip?",
+ ch:[["Marine Estate Residents","About 100 people, loud and willing",2,1,"feet","#f2a65a"],["Ward Councillor","Some power, not the top",-1,3,"head","#8e7dbe"],["The Mayor","Big picture, no time for small things",-2,5,"heart","#c0504d"],["National Newspaper","Responsive, strong legal team",1,4,"heart","#5aa9e6"],["Community Paper","Gets word out, no teeth",3,2,"feet","#9bd47f"],["Waste Department","Runs the landfill and new plant",-2,3,"head","#7a7f87"],["Jobs Non-Profit","Creates work in the informal settlement",0,1,"feet","#e87fa0"]]},
+{name:"Braai Bridges",demand:"Make Marine Estate a place where neighbours actually know each other.",
+ blurb:"Electric fences, high walls and polite distance. Connected people live longer. Your group wants street braais, cul-de-sac play and picnics at the vlei, with privacy respected.",
+ cards:{head:"Share the research: connected neighbours live longer.",heart:"Tell the story of a neighbour who was alone for weeks.",feet:"Host a small pilot braai on one cul-de-sac, privacy and fences respected."},
+ ask:"What did the cautious neighbours actually need from you? Was it a bigger idea, or a smaller first step?",
+ ch:[["Street Braai Crew","Your fellow organisers",2,2,"feet","#f2a65a"],["Security Committee","Worried about safety",-2,4,"head","#7a7f87"],["Residents’ Association Chair","Holds the rules and the keys",-1,5,"feet","#c0504d"],["Privacy-First Neighbours","Fences are how they feel safe",-3,2,"heart","#8e7dbe"],["Kids and Parents","Want somewhere to play",3,1,"heart","#e87fa0"],["Friends of the Vlei","Love the greenery",1,2,"head","#9bd47f"],["Local Wellness Researcher","Knows the health evidence",2,3,"head","#5aa9e6"]]},
+{name:"Two Suburbs, One Future",demand:"Build tech for good with Vrygrond, not for Vrygrond.",
+ blurb:"Tech people and social-sector people want to design solutions together. Vrygrond is full of capable people shaped by past and present injustice. Marine Estate wants to help without playing the saviour.",
+ cards:{head:"Show a small, clear plan and say who owns each part.",heart:"Share a story told by Vrygrond people, in their own words.",feet:"Start a co-design lab in Vrygrond, led by locals, with a first pilot."},
+ ask:"Where did you speak for someone instead of with them? What would change if they held the pen?",
+ ch:[["Tech for Good Crew","Skills, speed, blind spots",2,2,"head","#5aa9e6"],["Social Sector Practitioners","Know the space and the people",1,2,"heart","#e87fa0"],["Vrygrond Community Leaders","Real power, wary of outsiders",0,4,"feet","#f2a65a"],["Vrygrond Young Entrepreneurs","Ideas, hustle, few resources",2,1,"heart","#9bd47f"],["Marine Estate Donors","Generous, can lean saviour",-1,3,"heart","#8e7dbe"],["Constantia Investors","Money, want returns",-1,5,"head","#c0504d"],["Municipal Procurement","Slow rules, big contracts",-2,4,"feet","#7a7f87"]]}];
+const RESP0="<small>What people say to you will stay here until your next move.</small>";
+const QM={head:"“Okay, that’s clear and fair. What exactly are you asking me to do?”",heart:"“It feels good to be heard. Yes, that’s what matters to me.”",feet:"“A small trial with a review date? I can live with that.”"};
+const WHY={head:"You described what happened without blaming them, then asked for one clear thing. That is easy to say yes to.",heart:"You listened to what matters to them before pushing your idea. People move when they feel heard.",feet:"You offered a small trial with a check-back date. It felt safe enough to try."};
+const TIP={head:"Describe what you saw without blaming anyone, then ask for one clear thing.",heart:"Behind every position is something the person needs. Say how you feel and ask what matters to them.",feet:"Start small, ask what could go wrong, and agree when you’ll check back. Good enough for now, safe enough to try."};
+const TIP_OLD={head:"NVC: say what you observed without judgment, then make one clear, doable request.",heart:"NVC: behind every position is a need. Name the feeling and the need, and ask about theirs.",feet:"Sociocracy: consent means ‘good enough for now, safe enough to try’. Start small, invite objections, set a review date."};
+SC[0].cards={head:"Say what you saw, not who’s to blame: the landfill went from 26m to 29m after a promise to shrink it. Then ask for one step: a public reduction plan.",heart:"Say how residents feel (worried, unheard) and what they need (health, a say). Ask what the Waste Department needs to keep its promise.",feet:"Propose a small pilot: a community liaison group that meets monthly. Invite objections and set a review date."};
+SC[0].ask="Which objection did you hear that actually improved your plan?";
+SC[1].cards={head:"Say what you observed: most of us haven’t met the people three doors down. Then ask for one braai on one street.",heart:"Name the need under the fence: safety, privacy, belonging. Ask what privacy means to them before you ask for anything.",feet:"Propose one pilot braai, invite objections about privacy and noise, and agree when you’ll review it."};
+SC[1].ask="Whose need for privacy or safety did you hear first, and how did it change your plan?";
+SC[2].cards={head:"Say what you observed without labels: who is and isn’t at the table. Then request: Vrygrond leaders co-own the design.",heart:"Ask what Vrygrond people need and what they already have, before offering anything. Say what you need too.",feet:"Propose a co-design circle with equal say, decide by consent, and review it after three months."};
+SC[2].ask="Where did you decide for someone instead of with them? What would a shared circle have changed?";
+SC.push({name:"Plugged In and Built Up",demand:"Run a young company where decisions are made by consent and everyone’s needs count.",
+ blurb:"A team of 4 or 5 runs two projects: electric cars with charging points across Cape Town, sold to people starting ride-hail work, and a property business that renovates homes and employs the crews. The policies are still being written.",
+ cards:{head:"Say what you observed without blame: 14 chargers planned, 3 permits stuck. Then make one clear request for a next step.",heart:"Ask what they need (steady income, safe work, a say) and say what you need. Listen before you propose.",feet:"Propose a 3-month pilot, ask for objections, and set a review date. Good enough for now, safe enough to try."},
+ ask:"Which decision in your company should be made by consent, and who needs to be in that circle?",
+ ch:[["Driver-Owners","Buy your cars to run their own ride-hail work",1,2,"heart","#f2a65a"],["City of Cape Town Officials","Control the charger permits",-2,5,"head","#7a7f87"],["Charging Site Hosts","Own the land for the chargers",-1,3,"feet","#8e7dbe"],["Property Owners","Hire you to fix up their homes",1,4,"head","#5aa9e6"],["Renovation Crew","Employed to fix the properties",2,1,"heart","#9bd47f"],["Service Providers","Mechanics, electricians, suppliers",-1,2,"feet","#e87fa0"],["Our Own Team","The 4 or 5 of you, still writing policies",1,3,"feet","#c0504d"]]});
+function stance(x){return x>=1.5?"Supporter":x>=.5?"Leaning yes":x>-.5?"Undecided":x>-1.5?"Leaning no":"Opposed"}
+const mk=a=>({head:a[0],heart:a[1],feet:a[2]});
+const CT=()=>st.s.rc[st.round-1][st.sel][0];
+function setCards(){document.querySelectorAll(".card").forEach((b,n)=>{const k=b.dataset.k,cc=st.s.rc[st.round-1][k];b.innerHTML="<h4>"+(n+1)+". "+ICON[k]+" "+cc[0]+"</h4>"+cc[1]})}
+SC[0].story=["A letter arrives: the landfill will grow from 26m to 29m, after a promise to shrink it. About 100 neighbours are worried. Who do you talk to first?","People are talking. Now you need friends: the paper that responds, the jobs group in the settlement, and neighbours who will show up. Who needs a bigger voice?","The decision is close. The powerful people who disagree have reasons too, and their pushback shows what your plan is missing. Time to reach across."];
+SC[0].rc=[mk([["Lay out what happened","The landfill went from 26m to 29m after a promise to shrink it. Ask the Waste Department for one public plan."],["Ask what worries people","Hear what residents and the Councillor are afraid of and need, before you suggest anything."],["Offer a small first step","Suggest a monthly meeting between residents and the Waste Department. Try it for three months, then review."]]),mk([["Share the facts with the paper","Give the newspapers dates and numbers, no blame, plus one clear request."],["Hear the people who work there","Ask the jobs group what recycling work means for the settlement. Say what you need too."],["Start a community watch","Residents, the jobs group and the plant check the site together each month, and review it after a season."]]),mk([["Answer the Mayor’s doubts","Say what you saw about costs and the promise, and ask for one decision, not ten."],["Ask the Mayor what matters","Find out what pressures the Mayor faces. Name your worry and theirs, then look for a shared goal."],["Offer a joint trial","Propose a three-month shrink plan that the Mayor, Waste Department and residents all shape. Agree how to review it."]])];
+SC[1].story=["Your street has high walls and polite silence. Research says connected neighbours live longer. You want a braai, but not everyone wants strangers at the gate.","A few braais have happened and allies are showing up. Make room for the people who feel strongest about privacy and safety.","The association must decide about shared spaces. Those who hold back can show what would make this feel safe."];
+SC[1].rc=[mk([["Say what you noticed","Most of us haven’t met the people three doors down. Ask for one braai on one street."],["Ask what privacy means","Before asking for anything, learn what safety, privacy and belonging mean to your neighbours."],["Try one small braai","One cul-de-sac, one afternoon, easy to leave. Say when you will check how it went."]]),mk([["Share what research says","Connected neighbours live longer. Say it plainly, with no pressure, and make one request."],["Listen to the cautious ones","Ask the Security Committee what would make them feel safe. Say what you hope for."],["Pilot a vlei picnic","A casual picnic where nobody has to enter anyone’s home. Review it together afterwards."]]),mk([["Describe the gap, not the blame","Say what you have seen: kids with nowhere to play. Ask the Association for one trial street."],["Hear the Association’s fears","Ask the Chair what could go wrong in their eyes, and say what you need from the street."],["Let doubters shape the plan","Invite the Privacy-First Neighbours to set the rules for a trial, then agree a review date."]])];
+SC[2].story=["A tech crew and a social-sector crew have skills and good intentions. Vrygrond has capable people and deep knowledge. The question is who sits at the table.","Trust takes time. Give those who share your aim real influence, not just a seat.","Money and rules shape what gets built. The people who doubt you can show where the plan is weak."];
+SC[2].rc=[mk([["Say who is missing","Describe who is in the room and who isn’t, without blame. Ask for Vrygrond leaders to co-design."],["Ask what people already have","Before offering anything, ask Vrygrond leaders what they need and what is already working."],["Start with one small pilot","A tiny project led by Vrygrond people. Decide together and review in three months."]]),mk([["Show a plain plan","Who owns what, in simple words. Ask for feedback on the plan itself."],["Listen to young entrepreneurs","Hear what they need to grow and what they have been told before. Say what you hope for."],["Open a co-design lab","Meet weekly in Vrygrond. Everyone has an equal say and anyone can raise a concern."]]),mk([["Speak to the donors’ numbers","Describe what you saw in similar projects without blame, and ask for funding that Vrygrond helps direct."],["Ask investors what matters","Hear their hopes and worries. Say honestly what you need: fairness for the people building this."],["Ask what could go wrong","Ask Procurement and the Donors where the plan could fail, change it, then agree a review date."]])];
+SC[3].story=["Your team of 4 or 5 is launching electric car rentals and a property fix-up business. The policies are half-written and everyone needs something different.","You have momentum. Give your allies a bigger say in how things run.","Permits, landlords and suppliers could slow everything. Their doubts point to real gaps in your plan."];
+SC[3].rc=[mk([["State the facts plainly","14 chargers planned, 3 permits stuck. Ask the Officials for one clear next step."],["Ask what each person needs","Drivers want steady income and crews want safe work. Ask first, then say what the business needs."],["Trial one policy","Pick one policy, like how you decide things. Try it for three months and review."]]),mk([["Share how decisions get made","Describe the current mess without blame. Ask the team to agree one simple way."],["Listen to the crew","Ask the renovation crew what a good workday looks like. Say what you can and can’t offer."],["Set up a team circle","A short weekly meeting where each person has a say and decisions are reviewed."]]),mk([["Ask the City for one thing","Describe the charger delays factually. Ask for one named contact and a timeline."],["Hear the site hosts’ worries","Ask what worries them about hosting chargers, and say what you need."],["Pilot one charger site","One host, one charger, three months. Anyone can raise a concern, then review."]])];
+const G=2.2,WIN=0.6,$=id=>document.getElementById(id);
+const R=new THREE.WebGLRenderer({canvas:$("c"),antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x1b1630);scene.fog=new THREE.Fog(0x1b1630,22,48);
+const cam=new THREE.PerspectiveCamera(55,1,.1,100);
+scene.add(new THREE.HemisphereLight(0xffffff,0x554466,.9));
+const sun=new THREE.DirectionalLight(0xffffff,.7);sun.position.set(5,12,6);scene.add(sun);
+function sprite(t,w,col){const cv=document.createElement("canvas");cv.width=512;cv.height=128;const g=cv.getContext("2d");g.font="bold 54px Trebuchet MS,sans-serif";g.fillStyle=col||"#fff";g.textAlign="center";g.textBaseline="middle";g.fillText(t,256,64);const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true}));s.scale.set(w,w/4,1);return s}
+const board=new THREE.Group();scene.add(board);
+const base=new THREE.Mesh(new THREE.BoxGeometry(17.5,.4,15),new THREE.MeshLambertMaterial({color:0x2a2244}));base.position.y=-.4;board.add(base);
+const cA=new THREE.Color(0xd9695f),cB=new THREE.Color(0x3d9a99);
+for(let i=-3;i<=3;i++)for(let j=0;j<=5;j++){const c=cA.clone().lerp(cB,(i+3)/6).multiplyScalar((i+j)%2?.85:1);const m=new THREE.Mesh(new THREE.BoxGeometry(2,.2,2),new THREE.MeshLambertMaterial({color:c}));m.position.set(i*G,-.1,(2.5-j)*G);board.add(m)}
+const gl=new THREE.Mesh(new THREE.BoxGeometry(.12,.05,14),new THREE.MeshBasicMaterial({color:0xffffff}));gl.position.set(WIN*G,.02,0);board.add(gl);
+[["◀ DISAGREE",-6.5,7.7],["LOW INFLUENCE ▼",0,7.7],["AGREE ▶",6.5,7.7],["▲ HIGH INFLUENCE",0,-7.9]].forEach(a=>{const s=sprite(a[0],4.2);s.position.set(a[1],.6,a[2]);board.add(s)});
+const gs=sprite("GOAL",1.6,"#ffffff");gs.position.set(WIN*G,.9,-7);board.add(gs);
+const mkFig=(col,s)=>{const g=new THREE.Group();const b=new THREE.Mesh(new THREE.CylinderGeometry(.4*s,.55*s,1.1*s,16),new THREE.MeshLambertMaterial({color:col}));b.position.y=.55*s;const h=new THREE.Mesh(new THREE.SphereGeometry(.36*s,16,12),new THREE.MeshLambertMaterial({color:0xf0d2b0}));h.position.y=1.5*s;g.add(b,h);return g};
+const me=mkFig(0xffc94d,1.1);scene.add(me);
+const po=new THREE.Group();const pil=new THREE.Mesh(new THREE.CylinderGeometry(.55,.55,2.4,24,1,true),new THREE.MeshBasicMaterial({color:0xffe08a,transparent:true,opacity:.45,side:THREE.DoubleSide}));pil.position.y=1.2;
+const pr=new THREE.Mesh(new THREE.TorusGeometry(.8,.08,8,32),new THREE.MeshBasicMaterial({color:0xffc94d}));pr.rotation.x=Math.PI/2;pr.position.y=.1;
+const pl=sprite("PUBLIC OPINION",3.4,"#ffe08a");pl.position.y=3;po.add(pil,pr,pl);scene.add(po);
+let st=null,chars=[],orbs=[],keys={},vy=0,ground=true,shake=0,pops=[];
+function clear(a){a.forEach(o=>scene.remove(o.m||o));}
+function start(i){const s=SC[i];chars.forEach(c=>scene.remove(c.g));orbs.forEach(o=>scene.remove(o));$("labs").innerHTML="";
+ chars=s.ch.map(a=>{const c={n:a[0],r:a[1],x:a[2],y:a[3],like:a[4],col:a[5]};c.g=mkFig(new THREE.Color(a[5]),1);
+  c.ring=new THREE.Mesh(new THREE.TorusGeometry(.85,.09,8,28),new THREE.MeshBasicMaterial({color:0xffffff}));c.ring.rotation.x=Math.PI/2;c.ring.position.y=.08;c.g.add(c.ring);
+  c.g.position.set(c.x*G,0,(2.5-c.y)*G);scene.add(c.g);c.el=document.createElement("div");c.el.className="lab";$("labs").appendChild(c.el);return c});
+ st={s,round:1,left:3,sparks:0,sel:null,known:new Set(),pox:0,ptx:0,done:false,wasted:0,used:{head:0,heart:0,feet:0},streak:0};
+ st.pox=st.ptx=target();me.position.set(0,0,6.3);vy=0;spawnOrbs();
+ $("demand").innerHTML="<b>"+s.name+"</b><br>Demand: "+s.demand;
+ const cd=$("cards");cd.innerHTML="";["head","heart","feet"].forEach((k,n)=>{const b=document.createElement("button");b.className="card";b.dataset.k=k;const cc=s.rc[0][k];b.innerHTML="<h4>"+(n+1)+". "+ICON[k]+" "+cc[0]+"</h4>"+cc[1];b.onclick=()=>pick(k);cd.appendChild(b)});
+ $("menu").hidden=$("end").hidden=true;$("hud").hidden=$("bottom").hidden=false;$("touch").hidden=false;LOG.length=0;resetResp();say("<b>Chapter 1: "+RN[0].split(": ")[1]+"</b><br>"+s.story[0]);LOCK=0;upd()}
+function target(){let a=0,w=0;chars.forEach(c=>{a+=c.x*(c.y+1);w+=c.y+1});return a/w}
+function spawnOrbs(){orbs.forEach(o=>scene.remove(o));orbs=[];for(let i=0;i<4;i++){const o=new THREE.Mesh(new THREE.IcosahedronGeometry(.4,0),new THREE.MeshBasicMaterial({color:0xffd34d}));o.position.set((Math.random()*2-1)*7,2.7,(Math.random()*2-1)*6);scene.add(o);orbs.push(o)}}
+let mt;const LOG=[];let LOCK=0;function resetResp(){LOG.length=0;$("resp").innerHTML=RESP0}
+function renderLog(){$("resp").innerHTML="<button class='x' aria-label='Dismiss all' onclick='resetResp()'>×</button>"+LOG.map((m,i)=>"<div class='m"+(i?" old":"")+"'>"+m+"</div>").join("");$("resp").scrollTop=0}
+function say(t,ms){if(ms&&ms<=4500){const m=$("toast");m.innerHTML=t;m.classList.add("on");clearTimeout(mt);mt=setTimeout(()=>m.classList.remove("on"),ms);return}LOG.unshift(t);if(LOG.length>6)LOG.pop();LOCK=performance.now()+1000;renderLog()}
+function pick(k){if(!st||st.done)return;st.sel=st.sel===k?null:k;upd()}
+function nearest(){let b=null,d=2.4;chars.forEach(c=>{const x=c.g.position.x-me.position.x,z=c.g.position.z-me.position.z,q=Math.hypot(x,z);if(q<d){d=q;b=c}});return b}
+function act(){if(!st||st.done)return;if(performance.now()<LOCK)return;if(st.waiting){st.waiting=false;endRound();return}const c=nearest();if(!c){say("Walk up to someone first. Hop to grab the gold sparks.",2200);return}
+ if(!st.sel){st.known.add(c.n);say("<b>"+c.n+"</b> "+c.r+". What they need: "+HINT[c.like]+" "+ICON[c.like]);upd();return}
+ const t=st.sel,match=c.like===t,p=st.sparks>0?2:1;if(st.sparks>0)st.sparks--;let txt;
+ if(match){st.known.add(c.n);if(c.x>=1){c.y=Math.min(5,c.y+2*p);c.x=Math.min(3,c.x+.5*p);txt="<b>"+c.n+"</b> already agreed. You gave them a bigger voice, so more people listen to them now.";c.note="⬆ Influence up";c.until=performance.now()+9000}
+  else{const d=(st.round===3&&c.x<0?2:1)*p;c.x=Math.min(3,c.x+d);txt="<b>"+c.n+"</b> moved "+(d>1?"a long way ":"")+"towards Agree. "+WHY[t];c.note="▶ Agree "+(d>1?"++":"+");c.until=performance.now()+9000}pop(c,0x58d6b0)}
+ else{st.known.add(c.n);st.wasted++;txt="<b>"+c.n+"</b> didn’t move. They needed "+HINT[c.like]+" "+ICON[c.like]+", but you offered something else. Pitch wasted.";c.note="No change";c.until=performance.now()+9000;pop(c,0xe8695f)}
+ st.streak=match?(st.streak||0)+1:0;if(match)st.used[t]++;let sm="";if(st.streak>=2){st.sparks++;sm=" 🔥 Streak! Bonus spark."}st.sel=null;st.left--;const op=st.ptx;st.ptx+=(target()-st.ptx)*.6;st.pox=st.ptx;say("<b>"+c.n+" says:</b> "+(match?QM[t]:"“I’m not sure that speaks to what I need.”")+"<br>"+txt+"<br>📣 "+(st.ptx-op>.03?"Public opinion moved towards Agree, because it follows the people with the most influence.":st.ptx-op<-.03?"Public opinion slipped towards Disagree.":"Public opinion barely moved: the most influential people haven’t shifted.")+(match?"<br><i>"+TIP[t]+"</i>":"")+sm);upd();
+ if(st.left===0)st.waiting=true}
+function pop(c,col){const m=new THREE.Mesh(new THREE.TorusGeometry(.6,.07,8,28),new THREE.MeshBasicMaterial({color:col,transparent:true}));m.rotation.x=Math.PI/2;m.position.copy(c.g.position);m.position.y=.5;scene.add(m);pops.push({m,t:0})}
+function endRound(){const opp=chars.filter(c=>c.x<0).sort((a,b)=>b.y-a.y)[0];let e="";if(Math.random()<.35){st.ptx+=.25;e=" Good news travels: public opinion nudges your way. 🎉"}else if(opp){opp.y=Math.min(5,opp.y+1);e=" <b>"+opp.n+"</b> digs in and gains influence."}
+ if(st.round===3){finish();return}st.round++;st.left=3;spawnOrbs();setCards();upd();say("<b>Chapter "+st.round+": "+RN[st.round-1].split(": ")[1]+"</b><br>"+st.s.story[st.round-1]+"<br><small>"+e+" New sparks are floating overhead.</small>",6000)}
+function finish(){st.done=true;const v=st.ptx,win=v>=WIN;$("bottom").hidden=true;$("touch").hidden=true;
+ $("endbox").innerHTML="<h2>"+(win?"Opinion moved. The neighbourhood is listening.":"Not yet. Opinion hasn’t crossed the line.")+"</h2><p>Final public opinion: "+v.toFixed(2)+" (goal "+WIN+"). Wasted pitches: "+st.wasted+" of 9.</p><p>"+(win?"You found what moved each person and put your energy where influence sat.":"Try listening to more people before pitching, and aim at the powerful ones who disagree.")+"</p><p><b>What you practised:</b><br>"+["head","heart","feet"].map(k=>ICON[k]+" "+NAME[k]+" ("+st.used[k]+" matches): "+TIP[k]).join("<br>")+"</p><p><small>Where this comes from: these three moves are drawn from Nonviolent Communication (the first two) and Sociocracy (the third).</small></p><p><b>Think about it:</b> "+st.s.ask+"</p><button class='btn' id='again'>Play another scenario</button>";
+ $("end").hidden=false;$("again").onclick=()=>{$("end").hidden=true;$("hud").hidden=true;$("menu").hidden=false}}
+function upd(){$("rnd").innerHTML=RN[st.round-1]+"<br>Pitches left: "+"●".repeat(st.left)+"○".repeat(3-st.left)+" &nbsp; ⚡ Sparks: "+st.sparks;
+ const f=v=>(v+3)/6*100+"%";$("pin").style.left=f(Math.max(-3,Math.min(3,st.ptx)));$("goal").style.left=f(WIN);
+ document.querySelectorAll(".card").forEach(b=>b.classList.toggle("sel",b.dataset.k===st.sel));size()}
+const L=$("list");SC.forEach((s,i)=>{const b=document.createElement("button");b.className="sc";b.innerHTML="<b>"+s.name+"</b><br>"+s.blurb+"<br><i>Demand: "+s.demand+"</i>";b.onclick=()=>start(i);L.appendChild(b)});
+addEventListener("keydown",e=>{const k=e.key.toLowerCase();keys[k]=1;if(k==="1")pick("head");if(k==="2")pick("heart");if(k==="3")pick("feet");if((k==="e"||k==="enter")&&!e.repeat)act();if(k===" "||k.startsWith("arrow"))e.preventDefault()});
+addEventListener("keyup",e=>keys[e.key.toLowerCase()]=0);
+document.querySelectorAll("#touch button").forEach(b=>{const k=b.dataset.k;b.onpointerdown=e=>{e.preventDefault();keys[k]=1;if(k==="e")act()};b.onpointerup=b.onpointerleave=()=>keys[k]=0});
+let VT=0,VB=0,VH=innerHeight,nb="";
+function size(){const h=$("hud"),b=$("bottom"),r=document.documentElement.style;VT=h.hidden?0:h.offsetTop+h.offsetHeight+6;VB=b.hidden?0:b.offsetHeight;VH=Math.max(120,innerHeight-VT-VB);r.setProperty("--th",VT+"px");r.setProperty("--bh",VB+"px");R.setClearColor(0x1b1630);R.setSize(innerWidth,innerHeight);R.setScissorTest(false);R.clear();R.setViewport(0,VB,innerWidth,VH);R.setScissor(0,VB,innerWidth,VH);R.setScissorTest(true);cam.aspect=innerWidth/VH;cam.updateProjectionMatrix()}
+function nextBar(n){let t,g;if(st.waiting){t="Round complete. Press E (or the button) to start the next one.";g="Continue"}
+else if(st.sel){t=n?"Press E to pitch “"+CT()+"” to "+n.n+".":"Card chosen: "+CT()+". Now walk up to the person you want to pitch to.";g=n?"Pitch (E)":"Pick a person"}
+else{t=n?"Press E to listen to "+n.n+" (free), or choose a card 1, 2 or 3 to pitch to them.":"Walk up to someone to listen (free), or choose a card to pitch. Jump for ⚡ sparks.";g=n?"Listen (E)":"Walk to someone"}
+if(t!==nb){nb=t;$("nt").textContent=t;$("go").textContent=g}}
+addEventListener("resize",size);size();$("go").onclick=()=>act();document.querySelectorAll("#menu p")[2].innerHTML="Every person is moved by something different. Some need to hear what happened without blame, followed by one clear ask. Some need to feel heard first. Some need a small, safe trial they can say yes to. Listening is free, and a wrong guess wastes a pitch. Two right guesses in a row earn a bonus spark. The story unfolds over three chapters, and each chapter gives you new cards.";
+const clk=new THREE.Clock(),v3=new THREE.Vector3();
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clk.getDelta(),.05),t=clk.elapsedTime;
+ if(st&&!st.done){let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0),dz=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0);
+  if(dx||dz){const l=Math.hypot(dx,dz);me.position.x+=dx/l*6*dt;me.position.z+=dz/l*6*dt;me.rotation.y=Math.atan2(dx,dz)}
+  me.position.x=Math.max(-8,Math.min(8,me.position.x));me.position.z=Math.max(-7,Math.min(6.9,me.position.z));
+  if(keys[" "]&&ground){vy=9;ground=false}vy-=22*dt;me.position.y+=vy*dt;if(me.position.y<=0){me.position.y=0;vy=0;ground=true}
+  orbs=orbs.filter(o=>{o.rotation.y+=dt*2;o.position.y=2.7+Math.sin(t*3+o.position.x)*.15;if(v3.set(me.position.x,me.position.y+.9,me.position.z).distanceTo(o.position)<1.15){scene.remove(o);st.sparks++;upd();say("⚡ Spark! Your next pitch is twice as strong.",4000);return false}return true});
+  const n=nearest();nextBar(n);chars.forEach(c=>{c.g.position.x+=(c.x*G-c.g.position.x)*Math.min(1,dt*3);c.g.position.z+=((2.5-c.y)*G-c.g.position.z)*Math.min(1,dt*3);
+   c.ring.material.color.setHSL(.0+(c.x+3)/6*.4,.7,.5);const s=c===n?1.12+Math.sin(t*8)*.04:1;c.g.scale.set(s,s,s);
+   v3.copy(c.g.position);v3.y=2.1;v3.project(cam);c.el.style.left=Math.max(70,Math.min(innerWidth-70,(v3.x*.5+.5)*innerWidth))+"px";c.el.style.top=(VT+(-v3.y*.5+.5)*VH)+"px";
+   c.el.className="lab"+(c===n?" near":"");c.el.textContent=c.n+" "+(st.known.has(c.n)?ICON[c.like]:"❔")+" · "+stance(c.x)+(c.until&&performance.now()<c.until?"  ["+c.note+"]":"")})}
+ if(st){po.position.x+=(st.ptx*G-po.position.x)*Math.min(1,dt*3);pil.rotation.y+=dt}
+ pops=pops.filter(p=>{p.t+=dt;p.m.scale.setScalar(1+p.t*3);p.m.material.opacity=1-p.t*1.4;if(p.t>.7){scene.remove(p.m);return false}return true});
+ const tx=me.position.x*.7,tz=me.position.z;cam.position.x+=(tx-cam.position.x)*Math.min(1,dt*3);cam.position.z+=(tz+9-cam.position.z)*Math.min(1,dt*3);cam.position.y=10;cam.lookAt(cam.position.x,0,cam.position.z-9);
+ R.render(scene,cam)}
+loop();
+</script></body></html>
