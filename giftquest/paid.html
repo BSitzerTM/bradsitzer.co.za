@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>✅ Payment status — Gift Quest</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:linear-gradient(135deg,#0a0a1a,#1a1a3a); color:#fff;
+    min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .card { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:20px;
+    padding:36px; width:440px; max-width:92vw; text-align:center; backdrop-filter:blur(10px); }
+  .icon { font-size:3rem; margin-bottom:12px; }
+  h1 { font-size:1.3rem; margin-bottom:10px; }
+  .row { display:flex; justify-content:space-between; font-size:.9rem; margin:8px 0; }
+  .row .v { color:#ffd166; }
+  a.btn { display:inline-block; margin-top:22px; padding:12px 24px; border-radius:12px; text-decoration:none;
+    background:linear-gradient(135deg,#ffd166,#ff9f43); color:#222; font-weight:700; }
+  .spinner { display:inline-block; width:18px; height:18px; border:3px solid rgba(255,255,255,.3);
+    border-top-color:#ffd166; border-radius:50%; animation:spin 1s linear infinite; vertical-align:-4px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon" id="icon">⏳</div>
+  <h1 id="title">Confirming your payment…</h1>
+  <div class="row"><span>Reference</span><span class="v" id="ref">—</span></div>
+  <div class="row"><span>Amount</span><span class="v" id="amt">—</span></div>
+  <div class="row"><span>Status</span><span class="v" id="status"><span class="spinner"></span> checking…</span></div>
+  <div class="note" id="note" style="font-size:.8rem;opacity:.7;margin-top:14px;line-height:1.5">
+    PayFast is notifying us in real time. This page updates automatically — the recipient is emailed as soon as it clears.
+  </div>
+  <a class="btn" href="/giftquest/">← Back to Gift Quest</a>
+</div>
+<script>
+const q = new URLSearchParams(location.search);
+document.getElementById('ref').textContent = q.get('reference') || '—';
+document.getElementById('amt').textContent = q.get('amount') ? 'R' + Number(q.get('amount')).toLocaleString('en-ZA') : '—';
+
+const API = 'https://limegreen-bison-101856.hostingersite.com/webhook/giftquest';
+let checks = 0;
+const timer = setInterval(async () => {
+  checks++;
+  try {
+    const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'payment-status', reference: q.get('reference') }) });
+    const data = await res.json();
+    const rec = (Array.isArray(data) ? data[0] : data);
+    const paid = rec && (rec.paid === true || rec.done === true || rec.status === 'COMPLETE');
+    if (paid) {
+      clearInterval(timer);
+      document.getElementById('icon').textContent = '🎉';
+      document.getElementById('title').textContent = 'Payment confirmed!';
+      document.getElementById('status').innerHTML = '✅ Paid — thank you!';
+      document.getElementById('note').textContent = 'The recipient has been emailed. Your contribution now shows on the board.';
+    }
+  } catch (e) { /* keep polling */ }
+  if (checks > 30) {
+    clearInterval(timer);
+    document.getElementById('title').textContent = 'Still confirming…';
+    document.getElementById('status').innerHTML = '⏳ PayFast notification pending';
+    document.getElementById('note').textContent = 'This usually takes a few seconds. Refresh in a moment — your contribution will show as paid automatically once PayFast confirms.';
+  }
+}, 3000);
+</script>
+</body>
+</html>

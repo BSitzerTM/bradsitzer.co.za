@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🎁 Pay with PayFast — Gift Quest</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',system-ui,sans-serif; background:linear-gradient(135deg,#0a0a1a,#1a1a3a); color:#fff;
+    min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .card { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:20px;
+    padding:36px; width:420px; max-width:92vw; backdrop-filter:blur(10px); }
+  h1 { font-size:1.3rem; margin-bottom:6px; }
+  .who { color:#ffd166; font-weight:700; margin-bottom:14px; }
+  .row { display:flex; justify-content:space-between; font-size:.9rem; margin:8px 0; }
+  .row .v { color:#ffd166; }
+  label { display:block; font-size:.75rem; opacity:.8; margin:14px 0 4px; text-transform:uppercase; letter-spacing:.5px; }
+  input { width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.08); color:#fff; font-size:1rem; }
+  input:focus { outline:none; border-color:#ffd166; }
+  button { width:100%; margin-top:20px; padding:13px; border:none; border-radius:12px; cursor:pointer;
+    font-size:1rem; font-weight:700; background:linear-gradient(135deg,#ffd166,#ff9f43); color:#222; }
+  button:hover { filter:brightness(1.1); }
+  .note { font-size:.75rem; opacity:.65; margin-top:14px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>💸 Make your contribution</h1>
+  <div class="who" id="who">Loading…</div>
+  <div class="row"><span>Fundraising for</span><span class="v" id="target">—</span></div>
+  <div class="row"><span>Raised so far</span><span class="v" id="raised">—</span></div>
+  <form id="pfForm" method="post" action="">
+    <label>Your name</label>
+    <input name="payerName" id="payerName" required placeholder="e.g. Thandi">
+    <label>Amount (Rands)</label>
+    <input name="amount" id="amount" type="number" min="1" step="1" required placeholder="e.g. 250">
+    <button type="submit">🚀 Pay with PayFast</button>
+  </form>
+  <div class="note">You'll be taken to PayFast's secure payment page. After payment you'll return to Gift Quest and your contribution is marked paid automatically.</div>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+document.getElementById('who').textContent = `For: ${params.get('person') || 'Gift Quest member'} (${params.get('event') || 'gift'})`;
+document.getElementById('target').textContent = 'R' + Number(params.get('target') || 0).toLocaleString('en-ZA');
+document.getElementById('raised').textContent = 'R' + Number(params.get('raised') || 0).toLocaleString('en-ZA');
+document.getElementById('amount').value = params.get('suggested') || '';
+
+document.getElementById('pfForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const payerName = document.getElementById('payerName').value.trim();
+  const amount = parseInt(document.getElementById('amount').value);
+  if (!payerName || !amount) return;
+
+  // 1. Create the contribution (unpaid) via n8n and get its reference
+  const res = await fetch(window.GQ_API, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'start-payment',
+      personId: params.get('personId'), person: params.get('person'),
+      event: params.get('event'), payerName, amount
+    })
+  });
+  const data = await res.json();
+  const rec = Array.isArray(data) ? data[0] : data;
+  const fields = rec.fields || rec;
+  const reference = fields.reference || rec.reference;
+  const paymentId = rec.id || fields.id;
+
+  // 2. Build the signed PayFast request server-side and go
+  const pf = await fetch(window.GQ_API, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'payfast-checkout',
+      paymentId, reference, amount,
+      payerName,
+      itemName: `Gift Quest — ${params.get('person')}`,
+      personId: params.get('personId'), person: params.get('person'), event: params.get('event')
+    })
+  });
+  const pfData = await pf.json();
+  const checkout = Array.isArray(pfData) ? pfData[0] : pfData;
+  if (checkout.redirect) {
+    location.href = checkout.redirect;
+  } else {
+    alert('Could not start payment: ' + JSON.stringify(checkout).slice(0, 200));
+  }
+});
+window.GQ_API = 'https://limegreen-bison-101856.hostingersite.com/webhook/giftquest';
+</script>
+</body>
+</html>

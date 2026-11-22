@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎁 Gift Quest — Contribute to a Dream Gift</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { overflow:hidden; font-family:'Segoe UI',system-ui,sans-serif; background:#0a0a1a; color:#fff; }
+  #bg { position:fixed; inset:0; z-index:0; }
+  .ui { position:fixed; z-index:10; pointer-events:none; }
+  .ui > * { pointer-events:auto; }
+
+  #hud { top:0; left:0; right:0; padding:18px 24px; display:flex; justify-content:space-between; align-items:flex-start; }
+  #hud h1 { font-size:1.5rem; text-shadow:0 2px 12px rgba(0,0,0,.6); letter-spacing:1px; }
+  #hud h1 span { color:#ffd166; }
+  #hud .sub { font-size:.85rem; opacity:.85; margin-top:2px; }
+  #eventBadge { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,.25); padding:8px 16px; border-radius:999px; font-size:.85rem; backdrop-filter:blur(6px); }
+
+  #panel { position:fixed; right:20px; top:80px; bottom:20px; width:380px; max-width:calc(100vw - 40px);
+    background:rgba(15,15,35,.82); border:1px solid rgba(255,255,255,.15); border-radius:18px;
+    backdrop-filter:blur(14px); padding:20px; overflow-y:auto; z-index:20; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  #panel h2 { font-size:1.05rem; margin-bottom:10px; color:#ffd166; }
+  #panel.hidden { display:none; }
+  .close-btn { float:right; background:none; border:none; color:#fff; font-size:1.2rem; cursor:pointer; }
+
+  .field { margin-bottom:12px; }
+  .field label { display:block; font-size:.75rem; opacity:.8; margin-bottom:4px; text-transform:uppercase; letter-spacing:.5px; }
+  .field input, .field select, .field textarea { width:100%; padding:9px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.2);
+    background:rgba(255,255,255,.08); color:#fff; font-size:.9rem; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline:none; border-color:#ffd166; }
+  .field textarea { resize:vertical; min-height:60px; }
+  .field select option { color:#222; }
+
+  .btn { display:inline-block; padding:10px 18px; border-radius:12px; border:none; cursor:pointer;
+    font-size:.9rem; font-weight:600; transition:transform .15s, box-shadow .15s; }
+  .btn:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.4); }
+  .btn-gold { background:linear-gradient(135deg,#ffd166,#ff9f43); color:#222; }
+  .btn-blue { background:linear-gradient(135deg,#74b9ff,#0984e3); color:#fff; }
+  .btn-green { background:linear-gradient(135deg,#55efc4,#00b894); color:#222; }
+  .btn-ghost { background:rgba(255,255,255,.12); color:#fff; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+
+  .gift-card { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:14px; margin-bottom:10px; cursor:pointer; transition:all .2s; }
+  .gift-card:hover { background:rgba(255,255,255,.12); border-color:#ffd166; }
+  .gift-card.selected { border-color:#ffd166; background:rgba(255,209,102,.15); }
+  .gift-card .name { font-weight:700; font-size:.95rem; }
+  .gift-card .price { color:#ffd166; font-size:.9rem; margin-top:3px; }
+  .gift-card .desc { font-size:.8rem; opacity:.75; margin-top:4px; }
+  .gift-card .meta { font-size:.7rem; opacity:.6; margin-top:4px; }
+
+  .progress-wrap { background:rgba(255,255,255,.1); border-radius:999px; height:14px; overflow:hidden; margin:8px 0; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,#ffd166,#ff9f43,#00b894); border-radius:999px; transition:width .8s cubic-bezier(.4,0,.2,1); }
+  .stat-row { display:flex; justify-content:space-between; font-size:.85rem; margin:4px 0; }
+  .stat-row .val { color:#ffd166; font-weight:600; }
+  .stat-row.short .val { color:#ff6b6b; }
+
+  .contrib-list { max-height:160px; overflow-y:auto; margin-top:8px; }
+  .contrib-item { display:flex; justify-content:space-between; padding:6px 10px; background:rgba(255,255,255,.05); border-radius:8px; margin-bottom:4px; font-size:.8rem; }
+  .contrib-item .who { font-weight:600; }
+  .contrib-item .amt { color:#ffd166; }
+  .contrib-item.done { opacity:.55; text-decoration:line-through; }
+
+  .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.85); border:1px solid rgba(255,255,255,.2);
+    padding:12px 24px; border-radius:12px; font-size:.9rem; z-index:100; animation:pop .3s ease; }
+  @keyframes pop { from{transform:translate(-50%,20px); opacity:0} to{transform:translate(-50%,0); opacity:1} }
+
+  .hint { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); font-size:.75rem; opacity:.6; z-index:5; text-align:center; }
+  .confetti { position:fixed; top:-20px; width:10px; height:10px; z-index:99; pointer-events:none; animation:fall linear forwards; }
+  @keyframes fall { to { transform:translateY(100vh) rotate(720deg); opacity:0; } }
+
+  .tab-row { display:flex; gap:6px; margin-bottom:14px; }
+  .tab-btn { flex:1; padding:8px 4px; border-radius:10px; border:none; background:rgba(255,255,255,.08); color:#fff; cursor:pointer; font-size:.8rem; }
+  .tab-btn.active { background:linear-gradient(135deg,#ffd166,#ff9f43); color:#222; font-weight:700; }
+
+  .banking { background:rgba(0,0,.3); border-radius:12px; padding:12px; margin-top:10px; font-size:.8rem; }
+  .banking .row { display:flex; justify-content:space-between; margin:3px 0; }
+  .banking .row span:last-child { color:#ffd166; }
+
+  .quick-amts { display:flex; gap:6px; margin-bottom:8px; }
+  .quick-amts button { flex:1; padding:6px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08); color:#fff; cursor:pointer; font-size:.75rem; }
+  .quick-amts button:hover { border-color:#ffd166; }
+
+  #toast3d { position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:50; pointer-events:none;
+    font-size:2rem; font-weight:900; color:#ffd166; text-shadow:0 4px 20px rgba(0,0,0,.8); opacity:0; transition:opacity .3s, transform .3s; }
+  #toast3d.show { opacity:1; transform:translate(-50%,-60%) scale(1.15); }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<div id="hud" class="ui">
+  <div>
+    <h1>🎁 <span>Gift</span> Quest</h1>
+    <div class="sub">Pick a dream gift · contribute in Rands · watch it fill up live</div>
+  </div>
+  <div id="eventBadge">🎂 Birthdays &amp; 🎄 Christmas</div>
+</div>
+
+<div id="panel" class="ui">
+  <button class="close-btn" onclick="closePanel()">✕</button>
+  <div class="tab-row">
+    <button class="tab-btn active" data-tab="wishes" onclick="switchTab('wishes')">🎁 Wishes</button>
+    <button class="tab-btn" data-tab="contribute" onclick="switchTab('contribute')">💸 Contribute</button>
+    <button class="tab-btn" data-tab="wefund" onclick="switchTab('wefund')">🤝 WeFund</button>
+ </div>
+  <div id="tab-wishes"></div>
+  <div id="tab-contribute" style="display:none"></div>
+  <div id="tab-wefund" style="display:none"></div>
+</div>
+
+<div id="toast3d"></div>
+<div class="hint">🖱️ Drag to orbit · scroll to zoom · click a gift box to open the panel</div>
+
+<script src="three.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
