@@ -40,6 +40,13 @@
 </div>
 <script>
 const params = new URLSearchParams(location.search);
+const groupKey = new URLSearchParams(location.hash.slice(1)).get('group');
+async function paymentRequest(body) {
+  const res = await fetch(window.GQ_API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,...(!params.get('share') && groupKey ? {groupKey} : {})})});
+  let data = await res.json(); if (Array.isArray(data)) data = data[0] || {};
+  if (!res.ok || data.error) throw new Error(data.error || 'The gift link could not be verified.');
+  return data;
+}
 document.getElementById('who').textContent = `For: ${params.get('person') || 'Gift Quest member'} (${params.get('event') || 'gift'})`;
 document.getElementById('target').textContent = 'R' + Number(params.get('target') || 0).toLocaleString('en-ZA');
 document.getElementById('raised').textContent = 'R' + Number(params.get('raised') || 0).toLocaleString('en-ZA');
@@ -51,39 +58,23 @@ document.getElementById('pfForm').addEventListener('submit', async (e) => {
   const amount = parseInt(document.getElementById('amount').value);
   if (!payerName || !amount) return;
 
-  // 1. Create the contribution (unpaid) via n8n and get its reference
-  const res = await fetch(window.GQ_API, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'start-payment',
-      personId: params.get('personId'), person: params.get('person'),
-      event: params.get('event'), payerName, amount
-    })
-  });
-  const data = await res.json();
-  const rec = Array.isArray(data) ? data[0] : data;
+  const button = document.querySelector('button[type="submit"]');
+  button.disabled = true;
+  try {
+  // Pending contribution and checkout both require valid group access or a private gift token.
+  const rec = await paymentRequest({action:'start-payment',personId:params.get('personId'),person:params.get('person'),event:params.get('event'),payerName,amount,shareToken:params.get('share') || ''});
   const fields = rec.fields || rec;
   const reference = fields.reference || rec.reference;
   const paymentId = rec.id || fields.id;
 
   // 2. Build the signed PayFast request server-side and go
-  const pf = await fetch(window.GQ_API, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action: 'payfast-checkout',
-      paymentId, reference, amount,
-      payerName,
-      itemName: `Gift Quest — ${params.get('person')}`,
-      personId: params.get('personId'), person: params.get('person'), event: params.get('event')
-    })
-  });
-  const pfData = await pf.json();
-  const checkout = Array.isArray(pfData) ? pfData[0] : pfData;
+  const checkout = await paymentRequest({action:'payfast-checkout',paymentId,reference,amount,payerName,itemName:`Gift Quest — ${params.get('person')}`,personId:params.get('personId'),person:params.get('person'),event:params.get('event'),shareToken:params.get('share') || ''});
   if (checkout.redirect) {
     location.href = checkout.redirect;
   } else {
-    alert('Could not start payment: ' + JSON.stringify(checkout).slice(0, 200));
+    throw new Error('Could not start payment. Please check your gift link.');
   }
+  } catch (e) { alert(e.message); button.disabled = false; }
 });
 window.GQ_API = 'https://limegreen-bison-101856.hostingersite.com/webhook/giftquest';
 </script>

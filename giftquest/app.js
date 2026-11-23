@@ -2,20 +2,56 @@
 const CFG = window.GIFTQUEST_CONFIG;
 const rand = (v) => 'R' + v.toLocaleString('en-ZA', { maximumFractionDigits: 0 });
 
-let state = { gifts: [], contributions: [], people: [], selectedPerson: null, selectedEvent: null, activeTab: 'wishes' };
+const SHARE_TOKEN = new URLSearchParams(location.search).get('share');
+const GROUP_KEY = new URLSearchParams(location.hash.slice(1)).get('group');
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let state = { gifts: [], contributions: [], people: [], selectedPerson: null, selectedEvent: null, activeTab: 'wishes', private: false, shareToken: SHARE_TOKEN, accessError: null };
+
+async function apiRequest(payload) {
+  const res = await fetch(CFG.N8N_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, ...(!SHARE_TOKEN && GROUP_KEY ? {groupKey: GROUP_KEY} : {}) }) });
+  if (!res.ok) throw new Error(`Gift Quest request failed (${res.status})`);
+  let data = await res.json();
+  if (Array.isArray(data)) data = data[0] || {};
+  if (data.error) throw new Error(data.error);
+  return data;
+}
 
 /* ─── Data layer (n8n → Airtable, falls back to demo) ───────────────────── */
 async function loadData() {
   if (CFG.N8N_BASE) {
     try {
-      const res = await fetch(CFG.N8N_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'state' }) });
-      let data = await res.json();
-      if (Array.isArray(data)) data = data[0] || {};   // n8n responds with an array wrapper
+      const data = SHARE_TOKEN
+        ? await apiRequest({ action: 'private-state', token: SHARE_TOKEN })
+        : await apiRequest({ action: 'state' });
+      if (data.private) {
+        state.private = true;
+        state.privatePersonName = data.personName;
+        state.gifts = data.gifts || [];
+        state.contributions = data.contributions || [];
+        state.people = [{ id: data.person, name: data.personName, emoji: '' }];
+        state.selectedPerson = data.person;
+        state.selectedEvent = data.event;
+        return;
+      }
+      if (SHARE_TOKEN) throw new Error('Invalid or revoked private link');
       state.gifts = data.gifts || [];
       state.contributions = data.contributions || [];
       state.people = data.people || [];
       return;
-    } catch (e) { console.warn('n8n unavailable, using demo data', e); }
+    } catch (e) {
+      state.private = !!SHARE_TOKEN;
+      state.gifts = []; state.contributions = []; state.people = [];
+      state.accessError = SHARE_TOKEN ? 'This private gift link is invalid or has been revoked.' : 'Open your group-access link, or ask the gift recipient for their private gift link.';
+      return;
+    }
+  }
+  if (SHARE_TOKEN) {
+    state.private = true;
+    state.gifts = [];
+    state.contributions = [];
+    state.people = [];
+    toast('This private gift link is invalid or has been revoked.');
+    return;
   }
   state.gifts = CFG.DEMO_GIFTS.map(g => ({ ...g }));
   state.contributions = CFG.DEMO_CONTRIBUTIONS.map(c => ({ ...c }));
@@ -56,6 +92,7 @@ function groupPledged(gr) {
     .reduce((s, c) => s + (Number(c.amount) || 0), 0);
 }
 function personName(id) {
+  if (state.private && id === state.selectedPerson) return state.privatePersonName;
   const p = state.people.find(x => x.id === id);
   return p ? p.name : (id || 'Someone');
 }
@@ -305,10 +342,13 @@ function currentGroup() {
 
 /* ─── Renderers ──────────────────────────────────────────────────────────── */
 function render() {
-  renderWishes();
-  renderContribute();
-  renderWefund();
-  buildGiftBoxes();
+  if (state.accessError) {
+    document.getElementById('tab-wishes').innerHTML = `<h2>🔒 Gift Quest access</h2><p>${escapeHtml(state.accessError)}</p>`;
+    document.querySelector('.tab-row').hidden = true;
+    buildGiftBoxes();
+    return;
+  }
+  renderWishes(); renderContribute(); renderWefund(); buildGiftBoxes();
 }
 
 function renderWishes() {
@@ -330,9 +370,9 @@ function renderWishes() {
   }).join('');
   el.innerHTML = `<h2>🎁 Who are we spoiling?</h2>
     <p style="font-size:.8rem;opacity:.7;margin-bottom:10px">Contribute to a person's gift pool — they choose which of their listed gifts to buy with the money.</p>
-    <button class="btn btn-blue" style="width:100%;margin-bottom:12px" onclick="showAddWish()">➕ Add my wish</button>
+    ${state.private ? '' : '<button class="btn btn-blue" style="width:100%;margin-bottom:12px" onclick="showAddWish()">➕ Add my wish</button>'}
     <div id="addWishForm" style="display:none">
-      <div class="field"><label>Who are you?</label><select id="wPerson">${(state.people.length ? state.people : CFG.PEOPLE).map(p => `<option value="${p.id}">${p.emoji || ''} ${p.name}</option>`).join('')}</select></div>
+      <div class="field"><label>Who are you?</label><select id="wPerson">${(state.people.length ? state.people : (state.private ? [] : CFG.PEOPLE)).map(p => `<option value="${p.id}">${p.emoji || ''} ${p.name}</option>`).join('')}</select></div>
       <div class="field"><label>Event</label><select id="wEvent"><option value="birthday">🎂 Birthday</option><option value="christmas">🎄 Christmas</option></select></div>
       <div class="field"><label>Gift title</label><input id="wTitle" placeholder="e.g. Kindle Paperwhite"></div>
       <div class="field"><label>Price (Rands)</label><input id="wPrice" type="number" placeholder="e.g. 1000"></div>
@@ -379,8 +419,9 @@ function renderContribute() {
       <span class="who">${c.person || c.payerName || 'Someone'}</span>
       <span>${rand(c.amount)} ${c.done ? '✅ paid' : '⏳ pending'}</span>
     </div>`).join('');
-  const payUrl = `pay.html?personId=${gr.person}&person=${encodeURIComponent(personName(gr.person))}&event=${gr.event}&target=${gr.target}&raised=${raised}`;
+  const payUrl = `pay.html?personId=${encodeURIComponent(gr.person)}&person=${encodeURIComponent(personName(gr.person))}&event=${gr.event}&target=${gr.target}&raised=${raised}${state.shareToken ? '&share=' + encodeURIComponent(state.shareToken) : ''}${!state.shareToken && GROUP_KEY ? '#group=' + encodeURIComponent(GROUP_KEY) : ''}`;
   el.innerHTML = `<h2>💸 Contribute to ${personName(gr.person)}'s ${gr.event === 'birthday' ? 'birthday' : 'Christmas'} fund</h2>
+    ${state.private ? '<p style="font-size:.8rem;color:#ffd166;margin-bottom:10px">🔒 Only this gift pool is shared with you.</p>' : '<button class="btn btn-blue" style="width:100%;margin-bottom:12px" onclick="copyPrivateLink()">🔗 Copy private gift link</button>'}
     <div style="opacity:.8;margin-bottom:8px;font-size:.85rem">Their wish list:
       ${gr.gifts.map(g => `<a href="${g.link}" target="_blank" rel="noopener" style="color:#74b9ff">${g.title}</a> (${rand(g.price)})`).join(' · ')}
     </div>
@@ -449,4 +490,25 @@ function sendThankYou() {
 }
 
 /* ─── Boot ───────────────────────────────────────────────────────────────── */
-loadData().then(() => { render(); animate(); });
+loadData().then(() => {
+  if (state.private || state.accessError) {
+    document.getElementById('eventBadge').textContent = state.accessError ? '🔒 Gift link required' : (state.selectedEvent === 'birthday' ? '🎂 Private birthday gift' : '🎄 Private Christmas gift');
+    document.querySelector('#hud .sub').textContent = state.accessError || `A gift pool for ${state.privatePersonName} — every little contribution helps.`;
+    document.querySelectorAll('.tab-btn').forEach(b => { if (b.dataset.tab !== 'wishes') b.style.display = 'none'; });
+  }
+  render(); animate();
+  if (state.private && !state.accessError && currentGroup()) {
+    document.getElementById('tab-wishes').innerHTML = document.getElementById('tab-contribute').innerHTML;
+  }
+});
+
+async function copyPrivateLink() {
+  const gr = currentGroup();
+  if (!gr || state.private) return;
+  try {
+    const data = await apiRequest({action:'create-share-link',personId:gr.person,event:gr.event});
+    if (!data.url) throw new Error('Could not generate link');
+    try { await navigator.clipboard.writeText(data.url); toast('Private gift link copied — share this, not your group link.'); }
+    catch { window.prompt('Copy this private gift link:', data.url); }
+  } catch (e) { toast('Could not create private link. Check your group access.'); }
+}

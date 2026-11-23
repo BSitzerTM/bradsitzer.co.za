@@ -34,6 +34,8 @@
 </div>
 <script>
 const q = new URLSearchParams(location.search);
+const shareToken = q.get('share');
+if (shareToken) document.querySelector('a.btn').href = '/giftquest/?share=' + encodeURIComponent(shareToken);
 document.getElementById('ref').textContent = q.get('reference') || '—';
 document.getElementById('amt').textContent = q.get('amount') ? 'R' + Number(q.get('amount')).toLocaleString('en-ZA') : '—';
 
@@ -43,7 +45,7 @@ const timer = setInterval(async () => {
   checks++;
   try {
     const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'payment-status', reference: q.get('reference') }) });
+      body: JSON.stringify({ action: shareToken ? 'private-payment-status' : 'payment-status', reference: q.get('reference'), ...(shareToken ? {shareToken} : {}) }) });
     const data = await res.json();
     const rec = (Array.isArray(data) ? data[0] : data);
     const paid = rec && (rec.paid === true || rec.done === true || rec.status === 'COMPLETE');
