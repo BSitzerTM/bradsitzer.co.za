@@ -10,11 +10,13 @@ let state = { gifts: [], contributions: [], people: [], selectedPerson: null, se
 
 async function apiRequest(payload, groupPassword = GROUP_PASSWORD) {
   const res = await fetch(CFG.N8N_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, ...(!SHARE_TOKEN && GROUP_KEY ? {groupKey: GROUP_KEY, groupPassword} : {}) }) });
-  let data = await res.json().catch(() => ({}));
+  let data = [];
+  try { data = await res.json().catch(() => []); } catch { data = []; }
   if (Array.isArray(data)) data = data[0] || {};
-  const denied = data.error === 'Wrong password';
-  if (denied) { const err = new Error(denied ? 'Wrong password' : (data.error || `Request failed (${res.status})`)); err.wrongPassword = denied; throw err; }
-  if (!res.ok) throw new Error(data.error || `Gift Quest request failed (${res.status})`);
+  const denied = data.body?.error === 'Wrong password' || data.error === 'Wrong password' || res.status === 403 && data.body?.groupPasswordOk === false;
+  if (denied) { const err = new Error('Wrong password'); err.wrongPassword = true; throw err; }
+  if (!res.ok) throw new Error(data.body?.error || data.error || `Gift Quest request failed (${res.status})`);
+  if (data.body) data = data.body;
   if (data.error) throw new Error(data.error);
   return data;
 }
