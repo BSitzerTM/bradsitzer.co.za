@@ -8,8 +8,9 @@ const GROUP_PASSWORD = sessionStorage.getItem('gqGroupPassword') || '';
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let state = { gifts: [], contributions: [], people: [], selectedPerson: null, selectedEvent: null, activeTab: 'wishes', private: false, shareToken: SHARE_TOKEN, accessError: null, passwordPrompt: !!GROUP_KEY && !GROUP_PASSWORD };
 
-async function apiRequest(payload, groupPassword = GROUP_PASSWORD) {
-  const res = await fetch(CFG.N8N_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, ...(!SHARE_TOKEN && GROUP_KEY ? {groupKey: GROUP_KEY, groupPassword} : {}) }) });
+async function apiRequest(payload, groupPassword) {
+  const gp = groupPassword ?? sessionStorage.getItem('gqGroupPassword') ?? '';
+  const res = await fetch(CFG.N8N_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, ...(!SHARE_TOKEN && GROUP_KEY ? {groupKey: GROUP_KEY, groupPassword: gp} : {}) }) });
   let data = null;
   try { data = await res.json(); } catch { data = {}; }
   if (Array.isArray(data)) data = (data[0] || {}).body || data[0] || {};
