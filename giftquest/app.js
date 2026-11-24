@@ -4,20 +4,24 @@ const rand = (v) => 'R' + v.toLocaleString('en-ZA', { maximumFractionDigits: 0 }
 
 const SHARE_TOKEN = new URLSearchParams(location.search).get('share');
 const GROUP_KEY = new URLSearchParams(location.hash.slice(1)).get('group');
+const GROUP_PASSWORD = sessionStorage.getItem('gqGroupPassword') || '';
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let state = { gifts: [], contributions: [], people: [], selectedPerson: null, selectedEvent: null, activeTab: 'wishes', private: false, shareToken: SHARE_TOKEN, accessError: null };
+let state = { gifts: [], contributions: [], people: [], selectedPerson: null, selectedEvent: null, activeTab: 'wishes', private: false, shareToken: SHARE_TOKEN, accessError: null, passwordPrompt: !!GROUP_KEY && !GROUP_PASSWORD };
 
-async function apiRequest(payload) {
-  const res = await fetch(CFG.N8N_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, ...(!SHARE_TOKEN && GROUP_KEY ? {groupKey: GROUP_KEY} : {}) }) });
-  if (!res.ok) throw new Error(`Gift Quest request failed (${res.status})`);
-  let data = await res.json();
+async function apiRequest(payload, groupPassword = GROUP_PASSWORD) {
+  const res = await fetch(CFG.N8N_BASE, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, ...(!SHARE_TOKEN && GROUP_KEY ? {groupKey: GROUP_KEY, groupPassword} : {}) }) });
+  let data = await res.json().catch(() => ({}));
   if (Array.isArray(data)) data = data[0] || {};
+  const denied = data.error === 'Wrong password';
+  if (denied) { const err = new Error(denied ? 'Wrong password' : (data.error || `Request failed (${res.status})`)); err.wrongPassword = denied; throw err; }
+  if (!res.ok) throw new Error(data.error || `Gift Quest request failed (${res.status})`);
   if (data.error) throw new Error(data.error);
   return data;
 }
 
 /* ─── Data layer (n8n → Airtable, falls back to demo) ───────────────────── */
 async function loadData() {
+  if (state.passwordPrompt) return;   // wait for the password screen
   if (CFG.N8N_BASE) {
     try {
       const data = SHARE_TOKEN
@@ -39,6 +43,11 @@ async function loadData() {
       state.people = data.people || [];
       return;
     } catch (e) {
+      if (e.wrongPassword) {
+        state.passwordPrompt = true;
+        sessionStorage.removeItem('gqGroupPassword');
+        return;
+      }
       state.private = !!SHARE_TOKEN;
       state.gifts = []; state.contributions = []; state.people = [];
       state.accessError = SHARE_TOKEN ? 'This private gift link is invalid or has been revoked.' : 'Open your group-access link, or ask the gift recipient for their private gift link.';
@@ -495,12 +504,45 @@ loadData().then(() => {
     document.getElementById('eventBadge').textContent = state.accessError ? '🔒 Gift link required' : (state.selectedEvent === 'birthday' ? '🎂 Private birthday gift' : '🎄 Private Christmas gift');
     document.querySelector('#hud .sub').textContent = state.accessError || `A gift pool for ${state.privatePersonName} — every little contribution helps.`;
     document.querySelectorAll('.tab-btn').forEach(b => { if (b.dataset.tab !== 'wishes') b.style.display = 'none'; });
+  } else if (state.passwordPrompt) {
+    document.getElementById('eventBadge').textContent = '🔒 Group members only';
+    document.querySelector('#hud .sub').textContent = 'Enter the group password to open the board.';
+    document.querySelectorAll('.tab-btn').forEach(b => { if (b.dataset.tab !== 'wishes') b.style.display = 'none'; });
   }
   render(); animate();
+  if (state.passwordPrompt) renderPasswordScreen();
   if (state.private && !state.accessError && currentGroup()) {
     document.getElementById('tab-wishes').innerHTML = document.getElementById('tab-contribute').innerHTML;
   }
 });
+
+function renderPasswordScreen() {
+  const wishes = document.getElementById('tab-wishes');
+  wishes.innerHTML = `<h2>🔒 Group members only</h2>
+    <p style="font-size:.85rem;opacity:.8;margin-bottom:14px">This gift board is for our circle of ten. Enter the group password to open it.</p>
+    <div class="field"><label>Group password</label><input type="password" id="gqPw" autocomplete="off" placeholder="Group password"></div>
+    <button class="btn btn-gold" style="width:100%" onclick="submitGroupPassword()">Open the board</button>
+    <p id="gqPwError" style="color:#ff6b6b;font-size:.8rem;margin-top:10px;min-height:1em"></p>`;
+  document.getElementById('gqPw').focus();
+  document.getElementById('gqPw').addEventListener('keydown', e => { if (e.key === 'Enter') submitGroupPassword(); });
+}
+
+async function submitGroupPassword() {
+  const input = document.getElementById('gqPw');
+  const pw = input.value;
+  if (!pw) { document.getElementById('gqPwError').textContent = 'Please enter the group password.'; return; }
+  try {
+    await apiRequest({action:'verify-group-password'}, pw);
+    sessionStorage.setItem('gqGroupPassword', pw);
+    state.passwordPrompt = false;
+    state.accessError = null;
+    await loadData();
+    render();
+    if (state.passwordPrompt) { renderPasswordScreen(); document.getElementById('gqPwError').textContent = 'Wrong password. Try again.'; }
+  } catch (e) {
+    document.getElementById('gqPwError').textContent = e.wrongPassword ? 'Wrong password. Try again.' : (e.message || 'Could not verify the password.');
+  }
+}
 
 async function copyPrivateLink() {
   const gr = currentGroup();
