@@ -50,7 +50,7 @@ async function loadData() {
       }
       state.private = !!SHARE_TOKEN;
       state.gifts = []; state.contributions = []; state.people = [];
-      state.accessError = SHARE_TOKEN ? 'This private gift link is invalid or has been revoked.' : 'Open your group-access link, or ask the gift recipient for their private gift link.';
+      state.accessError = SHARE_TOKEN ? 'This private gift link is invalid or has been revoked.' : (GROUP_KEY ? 'Could not open the group board. Refresh and re-enter the password.' : 'Open your group-access link, or ask the gift recipient for their private gift link.');
       return;
     }
   }
@@ -537,6 +537,9 @@ async function submitGroupPassword() {
     state.passwordPrompt = false;
     state.accessError = null;
     await loadData();
+    document.getElementById('eventBadge').textContent = '🎁 Birthdays & 🎄 Christmas';
+    document.querySelector('#hud .sub').textContent = 'Pick a dream gift · contribute in Rands · watch it fill up live';
+    document.querySelectorAll('.tab-btn').forEach(b => { b.style.display = ''; });
     render();
     if (state.passwordPrompt) { renderPasswordScreen(); document.getElementById('gqPwError').textContent = 'Wrong password. Try again.'; }
   } catch (e) {
